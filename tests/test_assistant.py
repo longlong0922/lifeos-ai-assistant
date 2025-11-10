@@ -1,49 +1,102 @@
-from lifeos_ai_assistant import LifeOSAssistant, Task, UserProfile
+from datetime import date, timedelta
+
+import pytest
+
+from lifeos_ai_assistant import (
+    HabitEntry,
+    LifeOSAssistant,
+    LifeOSMemory,
+    ReflectionEntry,
+    UserProfile,
+)
 
 
-def build_assistant() -> LifeOSAssistant:
-    profile = UserProfile(
-        name="Test User",
-        focus_areas=("health", "learning"),
-        wake_time="07:00",
-        sleep_time="22:30",
+@pytest.fixture()
+def profile() -> UserProfile:
+    return UserProfile(name="小明", focus_areas=("健康", "成长"))
+
+
+def test_habit_coaching_spots_windows_and_obstacles(profile: UserProfile) -> None:
+    today = date.today()
+    history = [
+        HabitEntry(date=today - timedelta(days=3), completed=True, note="下午4-6点 天气好"),
+        HabitEntry(date=today - timedelta(days=2), completed=False, note="加班到九点 太累"),
+        HabitEntry(date=today - timedelta(days=1), completed=True, note="下午 和朋友约跑"),
+    ]
+    assistant = LifeOSAssistant(profile)
+    insight = assistant.habit_coaching("晨跑", history)
+
+    assert 0 < insight.success_rate < 1
+    assert any("下午" in window for window in insight.best_windows)
+    assert any("加班" in stress for stress in insight.stressors)
+    assert insight.suggestions
+
+
+def test_decision_support_adapts_to_low_mood(profile: UserProfile) -> None:
+    today = date.today()
+    memory = LifeOSMemory(
+        reflections=[
+            ReflectionEntry(date=today - timedelta(days=i), mood=4, energy=58, content="会议太多")
+            for i in range(1, 4)
+        ]
     )
-    return LifeOSAssistant(profile)
+    assistant = LifeOSAssistant(profile, memory)
+    guide = assistant.decision_support("周末要不要去聚会", ["参加", "休息"])
+
+    assert len(guide.clarifying_questions) >= 3
+    assert "情绪" in guide.clarifying_questions[2]
+    assert "倾向" in guide.recommendation
+    assert guide.pattern_summary
 
 
-def test_plan_day_generates_breaks_and_insights():
-    assistant = build_assistant()
-    tasks = [
-        Task(title="Deep Work", duration_minutes=120, priority=1, energy="high"),
-        Task(title="Admin", duration_minutes=45, priority=3, energy="low"),
-        Task(title="Workout", duration_minutes=60, priority=2, energy="high"),
-    ]
+def test_daily_brief_uses_memory_for_priorities(profile: UserProfile) -> None:
+    today = date.today()
+    memory = LifeOSMemory.from_dict(
+        {
+            "habits": [
+                {
+                    "name": "晨跑",
+                    "history": [
+                        {"date": (today - timedelta(days=i)).isoformat(), "completed": i % 2 == 0, "note": "下午"}
+                        for i in range(1, 6)
+                    ],
+                }
+            ],
+            "reflections": [
+                {"date": (today - timedelta(days=i)).isoformat(), "mood": 6 + (i % 2), "energy": 65 + i}
+                for i in range(1, 4)
+            ],
+            "insights": {"stressTriggers": ["会议多"], "productiveDays": ["周二"]},
+        }
+    )
+    assistant = LifeOSAssistant(profile, memory)
+    brief = assistant.daily_brief(today)
 
-    schedule, insights = assistant.plan_day(tasks)
-
-    labels = [block.label for block in schedule]
-    assert "Deep Work" in labels
-    assert any(block.category == "break" for block in schedule)
-    assert insights, "Expected at least one insight to be generated"
+    assert 50 <= brief.energy_prediction <= 95
+    assert brief.priorities, "Expect at least one priority entry"
+    assert any("会议" in risk for risk in brief.risks)
 
 
-def test_learning_path_duration_adjusts_with_time_commitment():
-    assistant = build_assistant()
-    recommendation_low = assistant.recommend_learning_path("python", 30)
-    recommendation_high = assistant.recommend_learning_path("python", 120)
+def test_reflection_dialogue_flags_emotions(profile: UserProfile) -> None:
+    memory = LifeOSMemory(
+        reflections=[
+            ReflectionEntry(date=date.today() - timedelta(days=1), content="会议拖延，让人累"),
+            ReflectionEntry(date=date.today() - timedelta(days=2), content="会议拖延 真的累"),
+        ]
+    )
+    assistant = LifeOSAssistant(profile, memory)
+    response = assistant.reflection_dialogue("今天真的好累，感觉无力")
 
-    assert recommendation_low.duration_weeks <= recommendation_high.duration_weeks
-    assert recommendation_low.daily_focus_minutes == 30
+    assert "疲惫" in response.detected_emotions
+    assert any("能量" in question for question in response.follow_up_questions)
+    assert response.recurring_pattern is not None
 
 
-def test_mood_analysis_handles_positive_and_negative_words():
-    assistant = build_assistant()
-    entries = [
-        "I felt happy and focused today.",
-        "Yesterday I was exhausted but hopeful for tomorrow.",
-    ]
+def test_goal_breakdown_creates_actionable_steps(profile: UserProfile) -> None:
+    assistant = LifeOSAssistant(profile)
+    plan = assistant.goal_breakdown("提升英语口语", daily_minutes=30, weeks=6, focus_area="学习")
 
-    report = assistant.analyse_mood(entries)
-    assert report.summary.startswith("Across 2 entries")
-    assert report.dominant_tone in {"uplifting", "mixed", "heavy"}
-    assert -1.0 <= report.energy_score <= 1.0
+    assert "提升英语口语" in plan.vision
+    assert len(plan.milestones) == 4
+    assert any("1分钟" in plan.first_step for _ in range(1))
+    assert any("完成天数" in metric for metric in plan.tracking_metrics)

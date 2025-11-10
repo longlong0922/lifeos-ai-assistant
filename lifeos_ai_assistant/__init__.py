@@ -1,20 +1,28 @@
-"""Core package for the LifeOS AI assistant."""
+"""Public package exports for the LifeOS assistant."""
 from .assistant import (
-    HabitPlan,
-    LearningRecommendation,
+    DailyBrief,
+    DecisionGuide,
+    DecisionRecord,
+    GoalPlan,
+    HabitEntry,
+    HabitInsight,
     LifeOSAssistant,
-    MoodInsight,
-    ScheduleBlock,
-    Task,
+    LifeOSMemory,
+    ReflectionEntry,
+    ReflectionResponse,
     UserProfile,
 )
 
 __all__ = [
+    "DailyBrief",
+    "DecisionGuide",
+    "DecisionRecord",
+    "GoalPlan",
+    "HabitEntry",
+    "HabitInsight",
     "LifeOSAssistant",
+    "LifeOSMemory",
+    "ReflectionEntry",
+    "ReflectionResponse",
     "UserProfile",
-    "ScheduleBlock",
-    "HabitPlan",
-    "LearningRecommendation",
-    "MoodInsight",
-    "Task",
 ]
