@@ -1,0 +1,40 @@
+# LifeOS 依赖包
+
+# Web 框架
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# LangGraph
+langgraph==0.0.26
+langchain-core==0.1.20
+
+# LLM 提供者
+openai==1.10.0
+tencentcloud-sdk-python==3.0.1090
+
+# 认证和安全
+python-jose[cryptography]==3.5.0
+bcrypt==5.0.0
+email-validator==2.3.0
+
+# 数据库
+# SQLite 是 Python 内置的，无需额外安装
+
+# 工具库
+python-dotenv==1.0.0
+python-multipart==0.0.6
+
+# 日志和监控
+loguru==0.7.2
+
+# 测试
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
+
+# 开发工具
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0

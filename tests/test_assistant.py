@@ -1,3 +1,58 @@
+import unittest
+from datetime import date, timedelta
+
+from lifeos_ai_assistant.assistant import (
+    UserProfile,
+    LifeOSMemory,
+    HabitEntry,
+    ReflectionEntry,
+    LifeOSAssistant,
+)
+
+
+class CoreBehaviorTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.profile = UserProfile(name="测试用户", focus_areas=("阅读",))
+        self.memory = LifeOSMemory()
+        today = date.today()
+        # habit history
+        self.memory.habits["跑步"] = [
+            HabitEntry(date=today - timedelta(days=2), completed=True, note="下午 4 点"),
+            HabitEntry(date=today - timedelta(days=1), completed=False, note="加班"),
+        ]
+        # reflections
+        self.memory.reflections = [
+            ReflectionEntry(date=today - timedelta(days=2), mood=7, energy=70, content="不错"),
+            ReflectionEntry(date=today - timedelta(days=1), mood=4, energy=40, content="太累了"),
+        ]
+        self.assistant = LifeOSAssistant(self.profile, self.memory)
+
+    def test_habit_coaching_returns_insight(self):
+        insight = self.assistant.habit_coaching("跑步")
+        self.assertIsNotNone(insight)
+        self.assertEqual(insight.name, "跑步")
+        self.assertIsInstance(insight.success_rate, float)
+
+    def test_decision_support_returns_guide(self):
+        guide = self.assistant.decision_support("聚会？", ["去", "不去"]) 
+        self.assertTrue(hasattr(guide, "recommendation"))
+        self.assertTrue(isinstance(guide.clarifying_questions, list))
+
+    def test_daily_brief_produces_fields(self):
+        brief = self.assistant.daily_brief()
+        self.assertIn("energyPrediction", brief.as_dict())
+
+    def test_reflection_dialogue_detects_emotion(self):
+        resp = self.assistant.reflection_dialogue("我今天很累，工作太多")
+        self.assertIsInstance(resp.detected_emotions, list)
+
+    def test_goal_breakdown_plan_structure(self):
+        plan = self.assistant.goal_breakdown("学英语", daily_minutes=20, weeks=3)
+        self.assertIn("goal", plan.as_dict())
+
+
+if __name__ == "__main__":
+    unittest.main()
 from datetime import date, timedelta
 
 import pytest

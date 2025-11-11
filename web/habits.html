@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>习惯管理 - LifeOS AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff3838;
+        }
+
+        .btn-warning {
+            background: #ffa502;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #ff9000;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .habits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .habit-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .habit-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .habit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .habit-title {
+            font-size: 20px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .habit-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .habit-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .habit-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .habit-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            position: relative;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        /* Confirm dialog */
+        .confirm-dialog {
+            background: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .confirm-dialog h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .confirm-dialog p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .habits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 习惯管理</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openAddModal()">➕ 添加习惯</button>
+                <button class="btn btn-secondary" onclick="goBack()">← 返回</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>我的习惯</h2>
+            <div id="habitsContainer" class="habits-grid">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="habitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">添加习惯</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="habitForm">
+                <input type="hidden" id="habitId">
+                <div class="form-group">
+                    <label for="habitName">习惯名称 *</label>
+                    <input type="text" id="habitName" required placeholder="例如：早起、阅读、运动">
+                </div>
+                <div class="form-group">
+                    <label for="habitDescription">描述</label>
+                    <textarea id="habitDescription" placeholder="描述这个习惯的具体内容..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="habitFrequency">频率 *</label>
+                    <select id="habitFrequency" required>
+                        <option value="daily">每天</option>
+                        <option value="weekly">每周</option>
+                        <option value="monthly">每月</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Dialog -->
+    <div id="deleteModal" class="modal">
+        <div class="confirm-dialog">
+            <h3>⚠️ 确认删除</h3>
+            <p id="deleteMessage">确定要删除这个习惯吗？删除后可以在"已归档"中找回。</p>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const USER_ID = localStorage.getItem('user_id');
+        const ACCESS_TOKEN = localStorage.getItem('access_token');
+
+        let habits = [];
+        let currentEditHabitId = null;
+        let currentDeleteHabitId = null;
+
+        // 页面加载时初始化
+        window.onload = function() {
+            if (!USER_ID || !ACCESS_TOKEN) {
+                alert('请先登录');
+                window.location.href = '/static/auth.html';
+                return;
+            }
+            loadHabits();
+        };
+
+        // 返回主页
+        function goBack() {
+            window.location.href = '/static/index.html';
+        }
+
+        // 加载习惯列表
+        async function loadHabits() {
+            try {
+                const response = await fetch(`${API_BASE}/habit/${USER_ID}`, {
+                    headers: {
+                        'Authorization': `Bearer ${ACCESS_TOKEN}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load habits');
+                }
+
+                const data = await response.json();
+                habits = data.habits || [];
+                renderHabits();
+            } catch (error) {
+                console.error('Error loading habits:', error);
+                document.getElementById('habitsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>加载失败：${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染习惯列表
+        function renderHabits() {
+            const container = document.getElementById('habitsContainer');
+
+            if (habits.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>还没有添加习惯</p>
+                        <button class="btn btn-primary" onclick="openAddModal()">添加第一个习惯</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = habits.map(habit => `
+                <div class="habit-card">
+                    <div class="habit-header">
+                        <div class="habit-title">${escapeHtml(habit.name)}</div>
+                        <span class="habit-status ${habit.is_active ? 'status-active' : 'status-inactive'}">
+                            ${habit.is_active ? '活跃' : '已停止'}
+                        </span>
+                    </div>
+                    <div class="habit-description">
+                        ${habit.description ? escapeHtml(habit.description) : '暂无描述'}
+                    </div>
+                    <div class="habit-meta">
+                        <span>📅 频率: ${getFrequencyText(habit.target_frequency)}</span>
+                        <span>⏰ ${formatDate(habit.created_at)}</span>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn btn-warning btn-sm" onclick="openEditModal(${habit.id})">
+                            ✏️ 编辑
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="openDeleteModal(${habit.id})">
+                            🗑️ 删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 打开添加模态框
+        function openAddModal() {
+            currentEditHabitId = null;
+            document.getElementById('modalTitle').textContent = '添加习惯';
+            document.getElementById('habitForm').reset();
+            document.getElementById('habitId').value = '';
+            document.getElementById('habitModal').style.display = 'block';
+        }
+
+        // 打开编辑模态框
+        function openEditModal(habitId) {
+            const habit = habits.find(h => h.id === habitId);
+            if (!habit) return;
+
+            currentEditHabitId = habitId;
+            document.getElementById('modalTitle').textContent = '编辑习惯';
+            document.getElementById('habitId').value = habitId;
+            document.getElementById('habitName').value = habit.name;
+            document.getElementById('habitDescription').value = habit.description || '';
+            document.getElementById('habitFrequency').value = habit.target_frequency;
+            document.getElementById('habitModal').style.display = 'block';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('habitModal').style.display = 'none';
+            document.getElementById('habitForm').reset();
+            currentEditHabitId = null;
+        }
+
+        // 处理表单提交
+        document.getElementById('habitForm').onsubmit = async function(e) {
+            e.preventDefault();
+
+            const habitData = {
+                name: document.getElementById('habitName').value,
+                description: document.getElementById('habitDescription').value,
+                target_frequency: document.getElementById('habitFrequency').value
+            };
+
+            try {
+                let response;
+                if (currentEditHabitId) {
+                    // 更新习惯
+                    response = await fetch(`${API_BASE}/habit/${currentEditHabitId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${ACCESS_TOKEN}`
+                        },
+                        body: JSON.stringify(habitData)
+                    });
+                } else {
+                    // 创建习惯
+                    response = await fetch(`${API_BASE}/habit/create`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${ACCESS_TOKEN}`
+                        },
+                        body: JSON.stringify({
+                            user_id: parseInt(USER_ID),
+                            ...habitData
+                        })
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to save habit');
+                }
+
+                closeModal();
+                loadHabits();
+                alert(currentEditHabitId ? '习惯更新成功！' : '习惯创建成功！');
+            } catch (error) {
+                console.error('Error saving habit:', error);
+                alert('保存失败：' + error.message);
+            }
+        };
+
+        // 打开删除确认对话框
+        function openDeleteModal(habitId) {
+            currentDeleteHabitId = habitId;
+            const habit = habits.find(h => h.id === habitId);
+            document.getElementById('deleteMessage').textContent = 
+                `确定要删除习惯"${habit.name}"吗？删除后可以在"已归档"中找回。`;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        // 关闭删除对话框
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            currentDeleteHabitId = null;
+        }
+
+        // 确认删除
+        async function confirmDelete() {
+            try {
+                const response = await fetch(`${API_BASE}/habit/${currentDeleteHabitId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${ACCESS_TOKEN}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete habit');
+                }
+
+                closeDeleteModal();
+                loadHabits();
+                alert('习惯已删除（已归档）');
+            } catch (error) {
+                console.error('Error deleting habit:', error);
+                alert('删除失败：' + error.message);
+            }
+        }
+
+        // 工具函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getFrequencyText(freq) {
+            const map = {
+                'daily': '每天',
+                'weekly': '每周',
+                'monthly': '每月'
+            };
+            return map[freq] || freq;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const habitModal = document.getElementById('habitModal');
+            const deleteModal = document.getElementById('deleteModal');
+            if (event.target === habitModal) {
+                closeModal();
+            }
+            if (event.target === deleteModal) {
+                closeDeleteModal();
+            }
+        };
+    </script>
+</body>
+</html>

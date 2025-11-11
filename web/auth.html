@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS AI 助手 - 登录/注册</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #999;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .timezone-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .timezone-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .hint {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-container {
+            animation: fadeIn 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <h1>🌟 LifeOS AI</h1>
+            <p>您的智能生活助手</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('login')">登录</div>
+            <div class="tab" onclick="switchTab('register')">注册</div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <!-- 登录表单 -->
+        <div class="form-section active" id="loginForm">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="loginUsername" required placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="loginPassword" required placeholder="请输入密码">
+                </div>
+                <button type="submit" class="submit-btn">登录</button>
+            </form>
+        </div>
+
+        <!-- 注册表单 -->
+        <div class="form-section" id="registerForm">
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="registerUsername" required placeholder="3-20个字符">
+                    <div class="hint">将作为您的唯一标识</div>
+                </div>
+                <div class="form-group">
+                    <label>邮箱</label>
+                    <input type="email" id="registerEmail" required placeholder="your@email.com">
+                    <div class="hint">用于找回密码</div>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="registerPassword" required placeholder="至少6位字符">
+                </div>
+                <div class="form-group">
+                    <label>确认密码</label>
+                    <input type="password" id="registerPasswordConfirm" required placeholder="再次输入密码">
+                </div>
+                <div class="form-group">
+                    <label>时区</label>
+                    <select id="registerTimezone" class="timezone-select">
+                        <option value="Asia/Shanghai">中国 (UTC+8)</option>
+                        <option value="America/New_York">美国东部 (UTC-5)</option>
+                        <option value="America/Los_Angeles">美国西部 (UTC-8)</option>
+                        <option value="Europe/London">英国 (UTC+0)</option>
+                        <option value="Europe/Paris">欧洲中部 (UTC+1)</option>
+                        <option value="Asia/Tokyo">日本 (UTC+9)</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">注册</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // 切换标签页
+        function switchTab(tab) {
+            // 更新标签样式
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 切换表单
+            document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.getElementById('registerForm').classList.add('active');
+            }
+
+            // 清空消息
+            hideMessages();
+        }
+
+        // 显示错误消息
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        // 显示成功消息
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // 隐藏消息
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        // 处理登录
+        async function handleLogin(event) {
+            event.preventDefault();
+            hideMessages();
+
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.detail || '登录失败');
+                    return;
+                }
+
+                // 保存令牌和用户信息
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('user_id', data.user_id);
+                localStorage.setItem('username', data.username);
+                localStorage.setItem('is_new_user', data.is_new_user);
+
+                showSuccess('登录成功!正在跳转...');
+
+                // 根据是否为新用户跳转
+                setTimeout(() => {
+                    if (data.is_new_user) {
+                        window.location.href = '/static/onboarding.html';
+                    } else {
+                        window.location.href = '/static/index.html';
+                    }
+                }, 1000);
+
+            } catch (error) {
+                showError('网络错误,请稍后重试');
+                console.error('登录错误:', error);
+            }
+        }
+
+        // 处理注册
+        async function handleRegister(event) {
+            event.preventDefault();
+            hideMessages();
+
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const timezone = document.getElementById('registerTimezone').value;
+
+            // 验证密码
+            if (password !== passwordConfirm) {
+                showError('两次输入的密码不一致');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('密码至少需要6位字符');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password,
+                        timezone
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.detail || '注册失败');
+                    return;
+                }
+
+                // 保存令牌和用户信息
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('user_id', data.user_id);
+                localStorage.setItem('username', data.username);
+                localStorage.setItem('is_new_user', 'true');
+
+                showSuccess('注册成功!正在进入新手引导...');
+
+                // 跳转到新手引导页面
+                setTimeout(() => {
+                    window.location.href = '/static/onboarding.html';
+                }, 1000);
+
+            } catch (error) {
+                showError('网络错误,请稍后重试');
+                console.error('注册错误:', error);
+            }
+        }
+
+        // 页面加载时检查是否已登录
+        window.onload = function() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                // 已登录,跳转到主页
+                window.location.href = '/static/index.html';
+            }
+        };
+    </script>
+</body>
+</html>
