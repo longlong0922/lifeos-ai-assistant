@@ -1,18 +1,29 @@
-# LifeOS 依赖包
+# LifeOS 依赖包 - LangChain + LangGraph 版本
 
-# Web 框架
+# ===== 核心框架 =====
+# LangChain - Prompt 管理和 LLM 调用
+langchain==0.1.20
+langchain-core==0.1.52
+langchain-community==0.0.38
+
+# LangGraph - 状态机工作流
+langgraph==0.0.62
+
+# LangChain OpenAI 集成
+langchain-openai==0.1.7
+
+# ===== LLM 提供者 =====
+openai==1.23.0                      # OpenAI Python SDK（兼容腾讯混元）
+tencentcloud-sdk-python==3.0.1090   # 腾讯云 SDK（可选）
+
+# ===== 数据处理 =====
+pydantic==2.5.3                     # 数据验证
+python-dotenv==1.0.0                # 环境变量管理
+
+# ===== Web 框架（可选）=====
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
-pydantic==2.5.3
 pydantic-settings==2.1.0
-
-# LangGraph
-langgraph==0.0.26
-langchain-core==0.1.20
-
-# LLM 提供者
-openai==1.10.0
-tencentcloud-sdk-python==3.0.1090
 
 # 认证和安全
 python-jose[cryptography]==3.5.0

@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS AI Assistant - 智能生活助理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #48bb78;
+            --warning-color: #ed8936;
+            --danger-color: #f56565;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --gray: #a0aec0;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 95vh;
+            max-height: 95vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: var(--gradient);
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .stats-card {
+            background: rgba(255, 255, 255, 0.15);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-title {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .stats-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .intent-list {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .intent-item {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .intent-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .intent-icon {
+            font-size: 20px;
+        }
+
+        .intent-count {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        /* 主聊天区域 */
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            background: var(--light);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* 头部 */
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            height: 80px;
+        }
+
+        .session-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #edf2f7;
+            color: var(--dark);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 聊天消息区域 */
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 30px;
+            scroll-behavior: smooth;
+            min-height: 0;
+            max-height: calc(95vh - 180px);
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-assistant {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .message-user .message-bubble {
+            background: var(--gradient);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-assistant .message-bubble {
+            background: white;
+            color: var(--dark);
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .intent-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        .confidence-score {
+            font-weight: bold;
+        }
+
+        .processing-steps {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 13px;
+        }
+
+        .step {
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-icon {
+            color: var(--success-color);
+        }
+
+        /* 输入区域 */
+        .input-area {
+            background: white;
+            padding: 20px 30px;
+            border-top: 2px solid #667eea;
+            flex-shrink: 0;
+            height: 120px;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            font-size: 15px;
+            resize: none;
+            font-family: inherit;
+            transition: all 0.3s;
+            background: #f7fafc;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 15px;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 思考动画 */
+        .thinking {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--gray);
+            font-size: 14px;
+            padding: 10px 20px;
+        }
+
+        .thinking-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray);
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        /* 欢迎屏幕 */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .welcome-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+
+        .welcome-subtitle {
+            font-size: 18px;
+            color: var(--gray);
+            margin-bottom: 30px;
+        }
+
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: 100vh;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .feature-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <span>LifeOS</span>
+            </div>
+            <div class="subtitle">智能生活助理 v2.0</div>
+
+            <div class="stats-card">
+                <div class="stats-title">今日对话</div>
+                <div class="stats-value" id="todayCount">0</div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-title">会话时长</div>
+                <div class="stats-value" id="sessionDuration">0m</div>
+            </div>
+
+            <div class="intent-list" id="intentList">
+                <div class="intent-item">
+                    <div>
+                        <span class="intent-icon">📋</span> 任务管理
+                    </div>
+                    <div class="intent-count">0</div>
+                </div>
+                <div class="intent-item">
+                    <div>
+                        <span class="intent-icon">💚</span> 情绪支持
+                    </div>
+                    <div class="intent-count">0</div>
+                </div>
+                <div class="intent-item">
+                    <div>
+                        <span class="intent-icon">🎯</span> 习惯追踪
+                    </div>
+                    <div class="intent-count">0</div>
+                </div>
+                <div class="intent-item">
+                    <div>
+                        <span class="intent-icon">🌟</span> 目标设定
+                    </div>
+                    <div class="intent-count">0</div>
+                </div>
+                <div class="intent-item">
+                    <div>
+                        <span class="intent-icon">📝</span> 反思总结
+                    </div>
+                    <div class="intent-count">0</div>
+                </div>
+                <div class="intent-item">
+                    <div>
+                        <span class="intent-icon">💬</span> 闲聊对话
+                    </div>
+                    <div class="intent-count">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主区域 -->
+        <div class="main-area">
+            <!-- 头部 -->
+            <div class="header">
+                <div class="session-info">
+                    <div class="status-indicator"></div>
+                    <span id="sessionId">等待连接...</span>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="clearChat()">
+                        <span>🗑️</span> 清空对话
+                    </button>
+                    <button class="btn btn-primary" onclick="exportChat()">
+                        <span>💾</span> 导出记录
+                    </button>
+                </div>
+            </div>
+
+            <!-- 聊天区域 -->
+            <div class="chat-area" id="chatArea">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-icon">🤖</div>
+                    <div class="welcome-title">你好！我是 LifeOS 智能助理</div>
+                    <div class="welcome-subtitle">我可以帮你管理任务、追踪习惯、规划目标，还能陪你聊天 😊</div>
+                    
+                    <div class="feature-cards">
+                        <div class="feature-card">
+                            <div class="feature-icon">📋</div>
+                            <div class="feature-title">任务管理</div>
+                            <div class="feature-desc">智能整理待办事项，按优先级排序，帮你高效完成工作</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-title">习惯养成</div>
+                            <div class="feature-desc">建立健康习惯，每日打卡记录，持续追踪你的成长</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🌟</div>
+                            <div class="feature-title">目标规划</div>
+                            <div class="feature-desc">拆解大目标为小步骤，制定可执行计划，助你实现梦想</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="输入消息... (Shift+Enter 换行，Enter 发送)"
+                            rows="2"
+                        ></textarea>
+                    </div>
+                    <button class="send-btn" onclick="sendMessage()">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let sessionId = null;
+        let messageCount = 0;
+        let sessionStartTime = Date.now();
+        let intentCounts = {
+            'task_management': 0,
+            'emotion_support': 0,
+            'habit_tracking': 0,
+            'goal_setting': 0,
+            'reflection': 0,
+            'casual_chat': 0
+        };
+
+        // 连接 WebSocket
+        function connectWebSocket() {
+            const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+            console.log('🔗 正在连接 WebSocket...', userId);
+            ws = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+
+            ws.onopen = () => {
+                console.log('✅ WebSocket 已连接');
+                // 添加系统消息显示连接状态
+                addSystemMessage('✅ 已连接到服务器');
+            };
+
+            ws.onmessage = (event) => {
+                console.log('📨 收到消息:', event.data);
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+
+            ws.onerror = (error) => {
+                console.error('❌ WebSocket 错误:', error);
+                addSystemMessage('❌ 连接出错，请刷新页面重试');
+            };
+
+            ws.onclose = () => {
+                console.log('🔌 WebSocket 已断开');
+                addSystemMessage('🔌 连接已断开，正在重连...');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // 处理消息
+        function handleMessage(data) {
+            console.log('📥 处理消息:', data);
+            
+            if (data.type === 'connected') {
+                sessionId = data.session_id;
+                document.getElementById('sessionId').textContent = `会话 ${sessionId.substr(0, 8)}...`;
+                // 显示欢迎消息
+                addAssistantMessage({
+                    intent: 'casual_chat',
+                    confidence: 1.0,
+                    response: data.message || '你好！我是 LifeOS 智能助理 😊\n\n我可以帮你：\n• 📋 管理任务和优先级\n• 💪 追踪习惯养成\n• 🎯 规划目标和里程碑\n• 💭 情绪陪伴和反思\n\n有什么可以帮你的吗？',
+                    processing_steps: []
+                });
+                hideWelcomeScreen();
+            } else if (data.type === 'thinking') {
+                showThinking();
+            } else if (data.type === 'response') {
+                hideThinking();
+                addAssistantMessage(data);
+                updateStats(data.intent);
+            } else if (data.type === 'error') {
+                hideThinking();
+                addSystemMessage(data.message);
+            }
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message || !ws) return;
+
+            addUserMessage(message);
+            ws.send(JSON.stringify({ message: message }));
+            input.value = '';
+            messageCount++;
+            updateTodayCount();
+        }
+
+        // 添加用户消息
+        function addUserMessage(message) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-user';
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${escapeHtml(message)}
+                </div>
+            `;
+            chatArea.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // 添加助手消息
+        function addAssistantMessage(data) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-assistant';
+            
+            const stepsHtml = data.processing_steps && data.processing_steps.length > 0
+                ? `<div class="processing-steps">
+                    ${data.processing_steps.map(step => 
+                        `<div class="step"><span class="step-icon">✓</span>${escapeHtml(step)}</div>`
+                    ).join('')}
+                   </div>`
+                : '';
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-meta">
+                        <span class="intent-badge">${getIntentLabel(data.intent)}</span>
+                        <span class="confidence-score">${(data.confidence * 100).toFixed(0)}%</span>
+                    </div>
+                    ${escapeHtml(data.response).replace(/\n/g, '<br>')}
+                    ${stepsHtml}
+                </div>
+            `;
+            chatArea.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // 显示思考动画
+        function showThinking() {
+            const chatArea = document.getElementById('chatArea');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'thinking';
+            thinkingDiv.id = 'thinkingIndicator';
+            thinkingDiv.innerHTML = `
+                <span>🤔</span>
+                <span>正在思考</span>
+                <div class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatArea.appendChild(thinkingDiv);
+            scrollToBottom();
+        }
+
+        // 隐藏思考动画
+        function hideThinking() {
+            const thinking = document.getElementById('thinkingIndicator');
+            if (thinking) thinking.remove();
+        }
+
+        // 添加系统消息
+        function addSystemMessage(message) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-assistant';
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <span style="color: var(--warning-color);">⚠️</span> ${escapeHtml(message)}
+                </div>
+            `;
+            chatArea.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // 隐藏欢迎屏幕
+        function hideWelcomeScreen() {
+            const welcome = document.getElementById('welcomeScreen');
+            if (welcome) welcome.style.display = 'none';
+        }
+
+        // 清空对话
+        function clearChat() {
+            if (confirm('确定要清空所有对话记录吗？')) {
+                const chatArea = document.getElementById('chatArea');
+                chatArea.innerHTML = '';
+                messageCount = 0;
+                intentCounts = {
+                    'task_management': 0,
+                    'emotion_support': 0,
+                    'habit_tracking': 0,
+                    'goal_setting': 0,
+                    'reflection': 0,
+                    'casual_chat': 0
+                };
+                updateAllCounts();
+            }
+        }
+
+        // 导出对话
+        function exportChat() {
+            alert('导出功能开发中...');
+        }
+
+        // 更新统计
+        function updateStats(intent) {
+            if (intentCounts.hasOwnProperty(intent)) {
+                intentCounts[intent]++;
+                updateIntentCounts();
+            }
+        }
+
+        function updateTodayCount() {
+            document.getElementById('todayCount').textContent = messageCount;
+        }
+
+        function updateIntentCounts() {
+            const intentMap = {
+                'task_management': 0,
+                'emotion_support': 1,
+                'habit_tracking': 2,
+                'goal_setting': 3,
+                'reflection': 4,
+                'casual_chat': 5
+            };
+
+            Object.keys(intentCounts).forEach(intent => {
+                const index = intentMap[intent];
+                const countElement = document.querySelectorAll('.intent-count')[index];
+                if (countElement) {
+                    countElement.textContent = intentCounts[intent];
+                }
+            });
+        }
+
+        function updateAllCounts() {
+            updateTodayCount();
+            updateIntentCounts();
+        }
+
+        // 更新会话时长
+        setInterval(() => {
+            const duration = Math.floor((Date.now() - sessionStartTime) / 60000);
+            document.getElementById('sessionDuration').textContent = duration + 'm';
+        }, 60000);
+
+        // 获取意图标签
+        function getIntentLabel(intent) {
+            const labels = {
+                'task_management': '📋 任务管理',
+                'emotion_support': '💚 情绪支持',
+                'habit_tracking': '🎯 习惯追踪',
+                'goal_setting': '🌟 目标设定',
+                'reflection': '📝 反思总结',
+                'casual_chat': '💬 闲聊对话'
+            };
+            return labels[intent] || intent;
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 滚动到底部
+        function scrollToBottom() {
+            const chatArea = document.getElementById('chatArea');
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // 键盘事件
+        document.getElementById('messageInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 页面加载完成后连接
+        window.onload = () => {
+            connectWebSocket();
+        };
+    </script>
+</body>
+</html>

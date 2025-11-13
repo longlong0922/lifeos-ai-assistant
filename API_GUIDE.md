@@ -1,434 +1,349 @@
-# 📖 API 文档的用途和使用方法
+# LifeOS API 使用文档
 
-## 🎯 API 文档是什么？
+## 快速开始
 
-API 文档（访问 http://localhost:8000/docs）是一个**交互式界面**，让你可以：
+### 1. 基础使用
 
-1. **查看所有功能** - 了解系统能做什么
-2. **测试 API** - 直接在浏览器中测试各个功能
-3. **查看参数** - 了解每个接口需要什么输入
-4. **学习使用** - 了解如何集成到其他应用
-
----
-
-## 💡 API 文档的 5 大用途
-
-### 1️⃣ 可视化测试功能（最常用）
-
-**不需要写代码，直接点点点就能测试！**
-
-#### 示例：发送聊天消息
-
-1. 打开 http://localhost:8000/docs
-2. 找到 `POST /api/chat` 接口
-3. 点击 "Try it out"
-4. 填写参数：
-   ```json
-   {
-     "user_id": 1,
-     "message": "我今天完成了跑步！"
-   }
-   ```
-5. 点击 "Execute"
-6. 立即看到 AI 的响应！
-
-**好处**：
-- ✅ 不用写代码
-- ✅ 实时看到结果
-- ✅ 可以快速试验不同的输入
-
----
-
-### 2️⃣ 了解系统所有功能
-
-API 文档清楚地展示了 LifeOS 的所有能力：
-
-#### 聊天相关
-- `POST /api/chat` - 发送消息，获取 AI 响应
-- `GET /api/health` - 检查系统状态
-- `GET /api/stats/{user_id}` - 查看用户统计
-- `GET /api/history/{user_id}` - 获取聊天历史
-
-#### 习惯管理
-- `POST /api/habit` - 创建新习惯
-- `GET /api/habit/{user_id}` - 查看所有习惯
-- `PUT /api/habit/{habit_id}` - 更新习惯
-- `DELETE /api/habit/{habit_id}` - 删除习惯
-- `POST /api/habit/{habit_id}/record` - 记录打卡
-
-#### 目标管理
-- `POST /api/goal` - 创建目标
-- `GET /api/goal/{user_id}` - 查看所有目标
-- `PUT /api/goal/{goal_id}` - 更新目标
-
-#### 反思记录
-- `POST /api/reflect` - 保存反思
-- `GET /api/reflect/{user_id}` - 获取反思历史
-
-#### 每日简报
-- `GET /api/brief/{user_id}` - 生成今日简报
-
----
-
-### 3️⃣ 学习如何集成到其他应用
-
-API 文档展示了如何用各种编程语言调用接口。
-
-#### Python 示例
 ```python
-import requests
+from modules.lifeos_real import LifeOSRealAssistant
 
-# 发送聊天消息
-response = requests.post(
-    "http://localhost:8000/api/chat",
-    json={
-        "user_id": 1,
-        "message": "我今天完成了跑步！"
-    }
+# 初始化助手（自动读取 .env 配置）
+assistant = LifeOSRealAssistant()
+
+# 简单对话
+response = assistant.chat(
+    user_id="user_001",
+    user_input="今天有好多事要做，感觉好累"
 )
 
-result = response.json()
-print(result['response'])  # AI 的回复
+# 获取响应文本
+print(response["display_text"])
 ```
 
-#### JavaScript 示例
-```javascript
-// 发送聊天消息
-fetch('http://localhost:8000/api/chat', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    user_id: 1,
-    message: '我今天完成了跑步！'
-  })
-})
-.then(response => response.json())
-.then(data => console.log(data.response));
-```
+### 2. 指定 LLM 提供者
 
-#### PowerShell 示例
-```powershell
-# 发送聊天消息
-$body = @{
-    user_id = 1
-    message = "我今天完成了跑步！"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost:8000/api/chat" `
-    -Method Post `
-    -ContentType "application/json" `
-    -Body $body
-```
-
----
-
-### 4️⃣ 开发自己的应用
-
-有了 API，你可以基于 LifeOS 开发各种应用：
-
-#### 应用场景示例
-
-**场景 A：桌面提醒工具**
 ```python
-# 每天早上 7 点获取简报并显示通知
-import requests
-import schedule
+# 使用腾讯混元
+assistant = LifeOSRealAssistant(llm_provider="hunyuan")
 
-def show_daily_brief():
-    response = requests.get("http://localhost:8000/api/brief/1")
-    brief = response.json()
-    # 显示桌面通知
-    show_notification(brief['content'])
+# 使用 OpenAI
+assistant = LifeOSRealAssistant(llm_provider="openai")
 
-schedule.every().day.at("07:00").do(show_daily_brief)
+# 使用 Mock 模式（测试）
+assistant = LifeOSRealAssistant(llm_provider="mock")
 ```
 
-**场景 B：微信机器人**
+## 核心 API
+
+### LifeOSRealAssistant
+
+主控制器类，协调所有模块。
+
+#### 初始化
+
 ```python
-# 在微信群中回复消息
-def on_message(msg):
-    response = requests.post(
-        "http://localhost:8000/api/chat",
-        json={
-            "user_id": get_user_id(msg.sender),
-            "message": msg.text
-        }
-    )
-    reply_to_wechat(response.json()['response'])
+assistant = LifeOSRealAssistant(
+    db_path="lifeos_data.db",  # 数据库路径
+    llm_provider="hunyuan"      # LLM 提供者
+)
 ```
 
-**场景 C：网页仪表盘**
-```javascript
-// React 组件显示习惯统计
-function HabitDashboard() {
-  const [stats, setStats] = useState({});
-  
-  useEffect(() => {
-    fetch('http://localhost:8000/api/stats/1')
-      .then(res => res.json())
-      .then(data => setStats(data));
-  }, []);
-  
-  return <div>完成率: {stats.habits.completion_rate}%</div>
+#### chat() 方法
+
+处理用户输入，返回结构化响应。
+
+**参数：**
+- `user_id` (str): 用户唯一标识
+- `user_input` (str): 用户输入文本
+
+**返回：**
+```python
+{
+    "success": True,                    # 是否成功
+    "mode": "action_assistant",         # 模式：emotion_support / action_assistant / mixed
+    "response_type": "summary_card",    # 响应类型
+    "content": {                        # 结构化内容
+        "summary": "...",
+        "priorities": [...],
+        "suggested_action": {...}
+    },
+    "display_text": "...",             # 可直接显示的文本
+    "timestamp": "2024-01-13T10:30:00"
 }
 ```
 
-**场景 D：Telegram Bot**
-```python
-# 在 Telegram 中使用 LifeOS
-from telegram import Bot
-
-def telegram_handler(update):
-    ai_response = requests.post(
-        "http://localhost:8000/api/chat",
-        json={
-            "user_id": update.user.id,
-            "message": update.message.text
-        }
-    ).json()
-    
-    bot.send_message(
-        chat_id=update.chat_id,
-        text=ai_response['response']
-    )
-```
-
----
-
-### 5️⃣ 调试和问题排查
-
-API 文档可以帮助你快速定位问题：
-
-#### 测试流程
-```
-1. 系统出问题
-   ↓
-2. 打开 API 文档
-   ↓
-3. 测试相关接口
-   ↓
-4. 查看返回的错误信息
-   ↓
-5. 找到问题原因
-```
-
-#### 示例：习惯记录不成功
-
-1. 打开 API 文档
-2. 测试 `GET /api/habit/1` - 查看习惯是否存在
-3. 测试 `POST /api/habit/{habit_id}/record` - 尝试记录
-4. 查看返回的错误信息（如 habit_id 不存在）
-5. 定位问题并修复
-
----
-
-## 🎮 实战演练
-
-### 练习 1：创建习惯并记录
-
-1. **启动服务**
-   ```powershell
-   python run.py
-   ```
-
-2. **打开 API 文档**
-   - 浏览器访问：http://localhost:8000/docs
-
-3. **创建习惯**
-   - 找到 `POST /api/habit`
-   - 点击 "Try it out"
-   - 填写：
-     ```json
-     {
-       "user_id": 1,
-       "name": "每天学习编程",
-       "description": "学习 30 分钟 Python",
-       "target_frequency": "daily"
-     }
-     ```
-   - 点击 "Execute"
-   - 记下返回的 `habit_id`
-
-4. **记录打卡**
-   - 找到 `POST /api/habit/{habit_id}/record`
-   - 填写 habit_id
-   - 填写：
-     ```json
-     {
-       "user_id": 1,
-       "status": "completed",
-       "context": "今天学习了函数和类"
-     }
-     ```
-   - 点击 "Execute"
-
-5. **查看统计**
-   - 找到 `GET /api/stats/1`
-   - 点击 "Try it out"
-   - 点击 "Execute"
-   - 看到新习惯的统计数据
-
-### 练习 2：聊天测试
-
-1. **发送消息**
-   - 找到 `POST /api/chat`
-   - 填写：
-     ```json
-     {
-       "user_id": 1,
-       "message": "帮我分析一下我的学习习惯"
-     }
-     ```
-   - 查看 AI 响应
-
-2. **查看历史**
-   - 找到 `GET /api/history/1`
-   - 查看所有对话记录
-
----
-
-## 🔧 高级用法
-
-### 自动化脚本
-
-创建一个每日打卡脚本：
+**示例：**
 
 ```python
-# daily_checkin.py
-import requests
-from datetime import datetime
+# 情绪支持场景
+response = assistant.chat("user_001", "我今天心情不好")
+# mode = "emotion_support"
 
-def daily_checkin():
-    # 获取用户输入
-    print("今天完成了哪些习惯？")
-    
-    # 获取所有习惯
-    habits = requests.get("http://localhost:8000/api/habit/1").json()
-    
-    for i, habit in enumerate(habits, 1):
-        print(f"{i}. {habit['name']}")
-        status = input(f"完成了吗？(y/n): ")
-        
-        if status.lower() == 'y':
-            # 记录完成
-            requests.post(
-                f"http://localhost:8000/api/habit/{habit['id']}/record",
-                json={
-                    "user_id": 1,
-                    "status": "completed",
-                    "context": f"打卡于 {datetime.now()}"
-                }
-            )
-            print("✅ 已记录")
-        else:
-            print("⏭️  跳过")
-    
-    # 获取今日简报
-    brief = requests.get("http://localhost:8000/api/brief/1").json()
-    print("\n📋 今日简报:")
-    print(brief['content'])
+# 任务处理场景
+response = assistant.chat("user_001", "帮我整理今天的任务")
+# mode = "action_assistant"
+# response_type = "summary_card"
 
-if __name__ == "__main__":
-    daily_checkin()
+# 任务拆解场景
+response = assistant.chat("user_001", "我想学习 Python")
+# mode = "action_assistant"
+# response_type = "action_plan"
 ```
 
-### 批量操作
+### 记忆管理
+
+记录用户偏好和习惯。
 
 ```python
-# batch_operations.py
-import requests
+from modules.memory import MemoryType
 
-# 批量创建习惯
-habits_to_create = [
-    {"name": "跑步", "description": "每天 30 分钟"},
-    {"name": "阅读", "description": "每天 20 页"},
-    {"name": "冥想", "description": "每天 10 分钟"}
+# 记录偏好
+assistant.memory_manager.remember(
+    user_id="user_001",
+    key="morning_productivity",
+    value=True,
+    memory_type=MemoryType.PREFERENCE
+)
+
+# 记录习惯
+assistant.memory_manager.remember(
+    user_id="user_001",
+    key="work_start_time",
+    value="9:00",
+    memory_type=MemoryType.ROUTINE
+)
+
+# 记录长期目标
+assistant.memory_manager.remember(
+    user_id="user_001",
+    key="career_goal",
+    value="成为数据科学家",
+    memory_type=MemoryType.GOAL
+)
+
+# 获取用户画像
+profile = assistant.memory_manager.get_user_profile("user_001")
+print(profile.morning_productivity)  # True
+print(profile.long_term_goals)       # ["成为数据科学家"]
+
+# 删除记忆
+assistant.memory_manager.forget("user_001", "morning_productivity")
+```
+
+### 直接调用 LLM
+
+```python
+from modules.llm_service import call_llm
+
+messages = [
+    {"role": "system", "content": "你是 LifeOS 助手"},
+    {"role": "user", "content": "帮我整理任务"}
 ]
 
-for habit in habits_to_create:
-    response = requests.post(
-        "http://localhost:8000/api/habit",
-        json={
-            "user_id": 1,
-            **habit,
-            "target_frequency": "daily"
-        }
-    )
-    print(f"✅ 创建习惯: {habit['name']}")
+response = call_llm(
+    messages,
+    temperature=0.7,
+    max_tokens=1500
+)
 ```
 
----
+## 响应类型详解
 
-## 📊 API 文档 vs 其他使用方式
+### 1. 情绪支持响应 (emotion_support)
 
-| 方式 | 优点 | 适用场景 |
-|------|------|----------|
-| **API 文档** | 可视化、交互式、适合测试 | 快速测试、学习接口 |
-| **命令行聊天** | 简单直接、对话式 | 日常使用、快速交互 |
-| **编程调用** | 灵活、可集成、自动化 | 开发应用、批量操作 |
-| **Web 界面** | 友好、美观（需开发） | 普通用户使用 |
-
----
-
-## 🎯 总结
-
-### API 文档的核心价值
-
-1. **学习工具** 📚
-   - 了解系统能做什么
-   - 学习如何使用每个功能
-
-2. **测试工具** 🧪
-   - 快速测试功能
-   - 验证参数和返回值
-
-3. **开发参考** 💻
-   - 集成到其他应用
-   - 自动化脚本开发
-
-4. **调试工具** 🔍
-   - 问题排查
-   - 接口验证
-
-### 下一步
-
-1. **现在就试试**：http://localhost:8000/docs
-2. **创建一个习惯**：用 API 文档测试
-3. **发送聊天消息**：看看 AI 如何响应
-4. **查看统计数据**：了解你的数据
-
----
-
-## 💡 实用技巧
-
-### 技巧 1：保存常用请求
-
-在 API 文档中测试成功后，点击 "Copy" 按钮，可以复制为 curl 命令：
-
-```bash
-curl -X 'POST' \
-  'http://localhost:8000/api/chat' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "user_id": 1,
-  "message": "你好"
-}'
+```python
+{
+    "success": True,
+    "mode": "emotion_support",
+    "response_type": "text",
+    "content": {
+        "text": "听起来你现在...",
+        "options": [
+            {"label": "🌿 说说话", "action": "continue_emotion"},
+            {"label": "📋 帮我整理任务", "action": "switch_to_action"}
+        ]
+    },
+    "display_text": "..."
+}
 ```
 
-### 技巧 2：使用 Postman
+### 2. 智能摘要响应 (summary_card)
 
-将 API 文档导出为 OpenAPI 规范，导入到 Postman 中使用：
-- 访问：http://localhost:8000/openapi.json
-- 在 Postman 中导入此文件
+```python
+{
+    "success": True,
+    "mode": "action_assistant",
+    "response_type": "summary_card",
+    "content": {
+        "summary": "用户有5个任务待处理",
+        "categories": ["work", "personal"],
+        "highlights": ["部分任务时间紧迫"],
+        "priorities": [
+            {
+                "item": "明天要交的报告",
+                "importance": 10,
+                "urgency": 10,
+                "reason": "明天截止"
+            }
+        ],
+        "suggested_action": {
+            "desc": "先花5分钟写报告摘要",
+            "est_minutes": 5,
+            "next_step": "打开文档，列出3个要点"
+        },
+        "skip_candidates": ["不紧急的邮件"]
+    }
+}
+```
 
-### 技巧 3：查看响应格式
+### 3. 任务拆解响应 (action_plan)
 
-点击 "Schemas" 部分，查看每个对象的详细结构。
+```python
+{
+    "success": True,
+    "mode": "action_assistant",
+    "response_type": "action_plan",
+    "content": {
+        "task": "学习 Python 数据分析",
+        "actions": [
+            {
+                "desc": "安装 Anaconda 环境",
+                "est_minutes": 5,
+                "type": "immediate",
+                "difficulty": "easy",
+                "expected_outcome": "环境安装完成"
+            },
+            {
+                "desc": "下载数据集",
+                "est_minutes": 20,
+                "type": "prep",
+                "difficulty": "easy",
+                "expected_outcome": "有了练手数据"
+            }
+        ],
+        "recommended_index": 0,
+        "rationale": "推荐从最简单的环境安装开始"
+    }
+}
+```
+
+## 高级用法
+
+### 1. 自定义 LLM 提供者
+
+```python
+from modules.llm_service import LLMProvider, LLMService
+
+class CustomProvider(LLMProvider):
+    def chat(self, messages, temperature=0.7, max_tokens=2000):
+        # 实现你的 LLM 调用逻辑
+        response = your_llm_api(messages)
+        return response
+
+# 注册自定义提供者
+service = LLMService()
+service.provider = CustomProvider()
+```
+
+### 2. 批量处理
+
+```python
+user_inputs = [
+    "今天要做什么",
+    "帮我整理任务",
+    "我想学编程"
+]
+
+results = []
+for user_input in user_inputs:
+    response = assistant.chat("user_001", user_input)
+    results.append(response)
+```
+
+### 3. 持久化会话
+
+```python
+# 会话状态会自动保存在数据库中
+# 用户下次访问时会记住之前的偏好
+
+# 获取用户画像
+profile = assistant.memory_manager.get_user_profile("user_001")
+
+# 基于画像提供个性化服务
+if profile.morning_productivity:
+    print("建议早上处理重要任务")
+```
+
+## 错误处理
+
+```python
+response = assistant.chat("user_001", user_input)
+
+if response["success"]:
+    print(response["display_text"])
+else:
+    error_message = response.get("error", "未知错误")
+    fallback = response.get("fallback_message", "")
+    print(f"错误: {error_message}")
+    print(f"回退响应: {fallback}")
+```
+
+## 环境配置
+
+### .env 文件
+
+```ini
+# LLM 提供者
+LLM_PROVIDER="hunyuan"
+
+# 腾讯混元
+TENCENT_SECRET_ID="your_id"
+TENCENT_SECRET_KEY="your_key"
+HUNYUAN_MODEL="hunyuan-large"
+
+# OpenAI（可选）
+OPENAI_API_KEY="sk-xxx"
+OPENAI_MODEL="gpt-3.5-turbo"
+
+# 数据库
+DB_PATH="data/lifeos.db"
+```
+
+## 性能优化建议
+
+1. **缓存 LLM 响应**
+   ```python
+   # TODO: 实现响应缓存
+   ```
+
+2. **异步处理**
+   ```python
+   # TODO: 使用 asyncio 提升并发性能
+   ```
+
+3. **批量 API 调用**
+   ```python
+   # TODO: 批量调用 LLM API
+   ```
+
+## 最佳实践
+
+1. **合理使用 Mock 模式**
+   - 开发时使用 Mock 模式节省 API 费用
+   - 生产环境切换到真实 LLM
+
+2. **用户画像更新**
+   - 定期更新用户偏好
+   - 根据行为模式调整记忆
+
+3. **错误处理**
+   - 始终检查 `response["success"]`
+   - 提供友好的错误提示
+
+4. **隐私保护**
+   - 敏感信息不要存入记忆
+   - 支持用户"忘记我"功能
 
 ---
 
-**现在打开浏览器试试吧！** 🚀
-
-http://localhost:8000/docs
+更多信息请参考 [README.md](README.md) 和 [UPGRADE_REPORT.md](UPGRADE_REPORT.md)
