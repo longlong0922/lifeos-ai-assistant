@@ -17,11 +17,21 @@ class ConversationManager:
     
     def __init__(self, db_path: str = "lifeos_data.db"):
         self.db_path = db_path
+        # 确保数据库文件所在目录存在
+        db_dir = Path(db_path).parent
+        if str(db_dir) != '.':  # 只有当不是当前目录时才创建
+            db_dir.mkdir(parents=True, exist_ok=True)
         self._init_database()
     
     def _init_database(self):
         """初始化数据库表"""
-        conn = sqlite3.connect(self.db_path)
+        try:
+            conn = sqlite3.connect(self.db_path)
+        except sqlite3.OperationalError as e:
+            print(f"❌ 数据库连接失败: {e}")
+            print(f"📁 数据库路径: {Path(self.db_path).absolute()}")
+            print(f"💡 提示: 检查文件路径和权限")
+            raise
         cursor = conn.cursor()
         
         # 会话表

@@ -18,7 +18,7 @@ class LLMProvider(ABC):
         self, 
         messages: List[Dict[str, str]], 
         temperature: float = 0.7,
-        max_tokens: int = 2000
+        max_tokens: int = 10000
     ) -> str:
         """调用 LLM 生成响应"""
         pass
