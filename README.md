@@ -4,6 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![LangChain](https://img.shields.io/badge/LangChain-1.0.2-orange.svg)](https://python.langchain.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-0.2.57-green.svg)](https://github.com/langchain-ai/langgraph)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -11,12 +12,12 @@
 
 ## ✨ 项目特色
 
-- 🤖 **真正的大模型意图识别** - 使用腾讯混元 LLM，不是简单的关键词匹配
+- 🤖 **真正的大模型意图识别** - 使用腾讯混元 LLM（hunyuan-large），基于语义理解而非关键词匹配
 - 💬 **多轮对话记忆** - SQLite 持久化存储，支持上下文连贯对话
-- 🔄 **LangGraph 工作流** - 8个智能节点，条件路由，专业的 Agent 架构
+- 🔄 **LangGraph 工作流** - 9个智能节点 + 条件路由，专业的 Agent 架构
 - 🎨 **现代化 Web UI** - 渐变色设计，WebSocket 实时通信，响应式布局
-- 📊 **数据可视化** - 任务统计、习惯追踪、目标进度一目了然
-- 🛠️ **完整工具链** - 4 大类工具：任务管理、习惯追踪、目标规划、情绪支持
+- 📊 **完整数据库设计** - 7张表支持任务、习惯、目标、反思的全生命周期管理
+- 🎯 **智能个性化增强** - 根据用户画像和对话历史动态优化建议（条件触发）
 
 ---
 
@@ -26,129 +27,329 @@
 - [快速开始](#-快速开始)
 - [项目结构](#-项目结构)
 - [技术架构](#-技术架构)
-- [配置说明](#-配置说明)
 - [使用示例](#-使用示例)
-- [开发指南](#-开发指南)
+- [API 文档](#-api-文档)
+- [常见问题](#-常见问题)
+- [Roadmap](#️-roadmap)
 
 ---
 
 ## 🎯 核心功能
 
-### 1️⃣ 智能意图识别
-- **6 种意图类型**：任务管理、情绪支持、习惯追踪、目标设定、反思总结、闲聊对话
-- **大模型驱动**：基于腾讯混元 LLM 的语义理解
-- **置信度评分**：每个识别结果都有置信度分数
+### 1️⃣ 智能意图识别（Intent Recognition）
 
-### 2️⃣ 任务管理
-- ✅ 自动提取用户输入中的任务
-- 🔴🟡🟢 **智能优先级排序**（high → medium → low）
-- 📋 任务分类和建议
-- 💡 上下文感知（理解"那我应该先做哪个？"这类问题）
+**基于腾讯混元 LLM 的语义理解，非关键词匹配**
 
-### 3️⃣ 情绪支持
-- 💚 情绪识别和倾听
-- 🤗 温暖的回应和建议
-- � 情绪记录和分析
+支持 **6 种意图类型**：
+- 🎯 **task_management** - 任务管理和优先级排序
+- 💚 **emotion_support** - 情绪倾听和温暖回应
+- 📈 **habit_tracking** - 习惯建立和打卡追踪
+- 🎯 **goal_setting** - 目标拆解和里程碑规划
+- 🤔 **reflection** - 周期性反思和总结
+- 💬 **casual_chat** - 日常闲聊和问答
 
-### 4️⃣ 习惯追踪
-- 🎯 建立新习惯的指导
-      3. 有三封邮件要回复
-      4. 同事让我帮忙看两个文件
-      5. 还要去超市买菜"
-```
+**关键特性**：
+- ✅ 置信度评分（0-1）
+- ✅ 上下文延续识别（识别"然后呢"、"接下来"等）
+- ✅ 对话历史摘要（最近3轮）
+- ✅ 降级策略（LLM失败时使用规则匹配）
 
-**LifeOS 输出:**
-
-```
-📊 我帮你理了一下，你今天的负担来自 5 类任务：
-
-📌 高优先级（必须今天完成）
-  1. 明天要交的项目报告（时间紧迫，优先级：10/10）
-
-📌 中优先级（今天完成更好）
-  2. 晚上客户会面准备（今晚会议，优先级：8/10）
-
-📌 可延后（不影响今天核心进度）
-  3. 三封邮件回复
-  4. 同事的两个文件
-  5. 超市买菜
-
-💡 建议跳过或延后：
-  • 不紧急的邮件可以明天早上处理
-  • 买菜可以让家人帮忙或叫外卖
-
-🚀 下一步行动（5分钟即可启动）：
-  → 打开报告文档，写 3 行核心摘要
-  
-我会在 15 分钟后提醒你继续。
-```
-
-**核心能力:**
-- ✅ 自动分类任务
-- ✅ 评估优先级（重要性 × 紧迫性）
-- ✅ 识别可跳过项
-- ✅ 提炼最轻松的启动点
+**实现代码**：[`agents/workflow_complete.py:175-261`](agents/workflow_complete.py#L175-L261)
 
 ---
 
-### 2️⃣ 计划难执行 → 自动拆成"下一步行动"
+### 2️⃣ 任务管理（Task Management）
 
-**场景:**
+**智能任务提取 + 优先级分析 + 三级排序**
+
+**核心能力**：
+- ✅ 从自然语言提取任务列表
+- ✅ 自动评估重要性（1-10）和紧急程度（1-10）
+- ✅ 三级优先级排序：
+  - 🔴 **High** - 重要且紧急
+  - 🟡 **Medium** - 中等优先级
+  - 🟢 **Low** - 可延后的任务
+- ✅ 估算所需时间
+- ✅ 生成执行建议
+
+**Prompt 模板**：`enhanced_task_extraction_prompt`
+
+**返回数据结构**：
+```json
+{
+  "tasks": [
+    {
+      "title": "完成项目报告",
+      "priority": "high",
+      "deadline": "今天下午",
+      "estimated_time": "90分钟"
+    }
+  ],
+  "priority_analysis": {
+    "urgent_count": 2,
+    "important_first": "完成项目报告"
+  },
+  "suggestions": [
+    "建议先完成高优先级任务",
+    "预留缓冲时间应对突发情况"
+  ]
+}
 ```
-用户: "我想开始学习 Python 数据分析，但不知道从哪里开始"
-```
 
-**LifeOS 输出:**
-
-```
-📋 我帮你拆解成 3 个可执行步骤：
-
-🟦 步骤 1（立即可做 - 5分钟）
-   → 安装 Anaconda 开发环境
-   预期成果：环境安装完成，可以打开 Jupyter Notebook
-   
-🟦 步骤 2（准备工作 - 20分钟）
-   → 下载一个真实数据集（推荐 Kaggle Titanic）
-   预期成果：有了练手的数据
-   
-🟦 步骤 3（核心学习 - 30分钟）
-   → 跟着教程完成第一个数据可视化
-   预期成果：绘制出第一张图表
-
-💡 推荐从步骤 1 开始（最容易上手）
-
-✨ 完成第一步后，我会帮你规划下一步。
-```
-
-**核心能力:**
-- ✅ 任务分解（大任务 → 小步骤）
-- ✅ 低摩擦启动（优先推荐 1-5 分钟的行动）
-- ✅ 明确预期成果
-- ✅ 持续跟进指导
+**实现代码**：[`agents/workflow_complete.py:269-408`](agents/workflow_complete.py#L269-L408)
 
 ---
 
-### 3️⃣ 个性化指导 → 根据你的习惯调整计划
+### 3️⃣ 个性化增强（Personalization）⭐
 
-**场景:**
+**根据用户画像和对话历史动态优化建议**
+
+**触发条件**：
+- ✅ 意图为 `task_management`
+- ✅ 提取的任务数量 ≥ 2
+- ✅ LLM 可用
+
+**个性化维度**：
+- 📊 工作风格识别（任务导向型/情绪抒发型/目标驱动型）
+- ⏰ 时间线调整（根据历史习惯）
+- 💡 激励方式定制（根据用户偏好）
+
+**用户画像构建**：
+```python
+def _extract_user_profile(self, conversation_history: List[Dict]) -> str:
+    task_count = sum(1 for h in history if h['intent'] == 'task_management')
+    emotion_count = sum(1 for h in history if h['intent'] == 'emotion_support')
+    
+    if task_count > 2:
+        return "工作风格: 任务导向型（喜欢整理和规划）"
+    # ...
 ```
-用户: "今天下午要写报告，晚上要回邮件，明天上午要开会"
 
-（系统记住了：你早上效率高、晚上容易累）
+**Prompt 模板**：`personalization_prompt`
+
+**返回数据结构**：
+```json
+{
+  "personalized_suggestions": [
+    "根据你的任务导向风格，建议使用番茄工作法",
+    "你习惯在上午处理重要任务，建议早上优先完成报告"
+  ],
+  "adapted_timeline": "上午9:00-11:00完成报告，下午处理邮件",
+  "motivation_style": "目标驱动型"
+}
 ```
 
-**LifeOS 输出:**
-
+**工作流路由**：
 ```
-📅 基于你的习惯，我重新安排了计划：
+task_processing → _should_personalize() 判断
+                       ↓
+              len(tasks) >= 2?
+             /               \
+           是                 否
+           ↓                  ↓
+    personalization    output_generation
+```
 
-✅ 今天下午（13:00-17:00）
-   → 回复邮件（轻量工作）
-   
-### 5️⃣ 目标规划
-- 🌟 大目标拆解为小步骤
-- 📍 里程碑设置
-- � 第一步行动指引
+**实现代码**：
+- 判断逻辑：[`agents/workflow_complete.py:138-144`](agents/workflow_complete.py#L138-L144)
+- 节点实现：[`agents/workflow_complete.py:410-484`](agents/workflow_complete.py#L410-L484)
+- 用户画像：[`agents/workflow_complete.py:202-227`](agents/workflow_complete.py#L202-L227)
+
+---
+
+### 4️⃣ 情绪支持（Emotion Support）
+
+**基于 LLM 的共情回应 + 实用建议**
+
+**核心能力**：
+- 💚 识别情绪状态（焦虑、压力、疲惫等）
+- 🤗 生成温暖的共情回应
+- 💡 提供缓解方法和快速行动建议
+
+**Prompt 模板**：`emotion_support_prompt`
+
+**返回数据结构**：
+```json
+{
+  "empathy_response": "我能理解你现在的感受...",
+  "suggestions": ["深呼吸放松", "暂时放下工作"],
+  "quick_actions": ["5分钟冥想", "听舒缓音乐"],
+  "tone": "温暖"
+}
+```
+
+**实现代码**：[`agents/workflow_complete.py:486-540`](agents/workflow_complete.py#L486-L540)
+
+---
+
+### 5️⃣ 习惯管理（Habit Tracking）
+
+**习惯计划设计 + 执行指导**
+
+**核心能力**：
+- 🎯 设计习惯计划（名称、频率、触发条件、奖励机制）
+- ✅ 提供追踪方式建议
+- 💪 生成激励文案
+
+**Prompt 模板**：`habit_management_prompt`
+
+**返回数据结构**：
+```json
+{
+  "habit_plan": {
+    "habit_name": "每天早起跑步",
+    "frequency": "每周3次",
+    "trigger": "闹钟响起后立即穿运动服",
+    "reward": "周末奖励自己一顿美食",
+    "start_small": "第一周只跑15分钟",
+    "tracking_method": "日历打卡"
+  },
+  "motivation_message": "坚持就是胜利！"
+}
+```
+
+**数据库支持**：
+- `habits` 表：存储习惯信息
+- `habit_checkins` 表：记录打卡历史
+
+**实现代码**：[`agents/workflow_complete.py:542-593`](agents/workflow_complete.py#L542-L593)
+
+---
+
+### 6️⃣ 目标规划（Goal Setting）
+
+**目标拆解 + 里程碑设置 + 延续性回答**
+
+**核心能力**：
+- 🌟 将大目标拆解为 3-5 个里程碑
+- 📍 每个里程碑包含：行动清单、截止日期、预期成果
+- 🚀 提供第一步行动指引
+- 🔄 支持多轮延续（"第二步怎么做？"）
+
+**Prompt 模板**：`goal_planning_prompt`
+
+**返回数据结构（新目标）**：
+```json
+{
+  "goal": "3个月学会Python数据分析",
+  "why": "提升数据处理能力",
+  "timeline": "12周，每周10小时",
+  "milestones": [
+    {
+      "milestone": "Python基础语法",
+      "description": "掌握变量、函数、类等",
+      "deadline": "第1-2周",
+      "actions": ["完成官方教程前3章", "做20道练习题"]
+    }
+  ],
+  "first_step": {
+    "action": "注册Coursera账号，开始Python入门课程",
+    "time_required": "30分钟",
+    "expected_result": "完成环境搭建"
+  },
+  "resources": ["Python官方教程", "Coursera课程"],
+  "tips": ["每天学习1-2小时", "加入学习社群"]
+}
+```
+
+**返回数据结构（延续性回答）**：
+```json
+{
+  "is_continuation": true,
+  "step_number": 2,
+  "action": "学习NumPy和Pandas基础",
+  "details": "掌握数组操作和数据清洗",
+  "time_required": "3周",
+  "expected_result": "能进行基本数据处理"
+}
+```
+
+**数据库支持**：
+- `goals` 表：存储目标信息
+- `goal_milestones` 表：存储里程碑和完成状态
+
+**实现代码**：[`agents/workflow_complete.py:595-748`](agents/workflow_complete.py#L595-L748)
+
+---
+
+### 7️⃣ 反思引导（Reflection）
+
+**4D 反思模型：总结 → 成就 → 学习 → 改进 → 行动**
+
+**核心能力**：
+- 📅 支持周期性反思（每日/每周/每月）
+- 🤔 从对话历史提取数据（任务、目标等）
+- 📝 生成结构化反思总结
+
+**Prompt 模板**：`reflection_prompt`
+
+**返回数据结构**：
+```json
+{
+  "summary": "这周完成了3个重要任务...",
+  "achievements": ["按时完成项目报告", "坚持运动3天"],
+  "learnings": ["时间管理更高效了", "学会了番茄工作法"],
+  "improvements": ["邮件回复还不够及时", "需要更早开始准备"],
+  "next_actions": ["下周优先处理邮件", "提前2天准备会议"]
+}
+```
+
+**数据库支持**：
+- `reflections` 表：存储反思记录
+
+**实现代码**：[`agents/workflow_complete.py:750-842`](agents/workflow_complete.py#L750-L842)
+
+---
+
+### 8️⃣ 闲聊对话（Casual Chat）
+
+**LLM 生成友好回应 + 规则降级**
+
+**核心能力**：
+- 💬 基于对话历史生成个性化回应
+- 😊 友善亲切，适当使用 emoji
+- 🔄 降级策略：LLM 失败时使用规则匹配
+
+**实现代码**：[`agents/workflow_complete.py:844-913`](agents/workflow_complete.py#L844-L913)
+
+---
+
+### 9️⃣ 多轮对话记忆
+
+**SQLite 持久化存储 + 上下文管理**
+
+**核心能力**：
+- 💬 保存所有对话历史（用户输入 + 助理回复 + 意图 + 置信度）
+- 🔗 按用户ID和会话ID组织对话
+- 📚 提供历史查询接口
+- 🔍 构建对话摘要（最近3轮）
+
+**数据库表结构**：
+```sql
+-- 会话表
+CREATE TABLE sessions (
+    session_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    start_time TIMESTAMP,
+    last_active TIMESTAMP,
+    total_turns INTEGER
+);
+
+-- 对话历史表
+CREATE TABLE conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT,
+    user_id TEXT,
+    user_message TEXT,
+    assistant_message TEXT,
+    intent TEXT,
+    intent_confidence REAL,
+    extracted_data TEXT,  -- JSON
+    timestamp TIMESTAMP
+);
+```
+
+**实现代码**：[`agents/conversation_manager.py`](agents/conversation_manager.py)
 
 ---
 
@@ -156,7 +357,7 @@
 
 ### 1. 环境要求
 
-```
+```bash
 Python 3.10+
 pip 或 conda
 ```
@@ -174,14 +375,19 @@ cd lifeos-ai-assistant
 pip install -r requirements.txt
 ```
 
-核心依赖：
-- `langchain==1.0.2` - LangChain 框架
-- `langgraph==0.0.62` - 工作流编排
-- `tencentcloud-sdk-python==3.0.1090` - 腾讯混元 SDK
-- `fastapi` - Web 框架
-- `uvicorn` - ASGI 服务器
-- `websockets` - WebSocket 支持
-- `pydantic==2.11.0` - 数据验证
+**核心依赖**：
+```
+langchain==1.0.2
+langchain-core==0.3.28
+langgraph==0.2.57
+langgraph-checkpoint-sqlite==2.0.8
+tencentcloud-sdk-python==3.0.1090
+fastapi
+uvicorn
+websockets
+pydantic==2.11.0
+python-dotenv==1.0.1
+```
 
 ### 4. 配置环境变量
 
@@ -200,14 +406,14 @@ MODEL_NAME=hunyuan-large
 DB_PATH=lifeos_data.db
 ```
 
-**获取腾讯云密钥：**
+**获取腾讯云密钥**：
 1. 访问 [腾讯云控制台](https://console.cloud.tencent.com/)
 2. 进入"访问管理" → "API密钥管理"
 3. 创建密钥对，复制 SecretId 和 SecretKey
 
 ### 5. 启动服务
 
-#### 方式 1: Web UI（推荐）
+#### 方式 1: Web UI（推荐）⭐
 
 ```bash
 python web_app.py
@@ -215,10 +421,38 @@ python web_app.py
 
 访问：http://localhost:8000
 
-#### 方式 2: 命令行测试
+**Web UI 特性**：
+- 🎨 紫色到蓝色渐变背景
+- 💬 WebSocket 实时通信
+- 📜 完整对话历史
+- 🔄 自动重连
+- 🎯 意图识别可视化
+
+#### 方式 2: 命令行 Demo
 
 ```bash
 python demo_complete.py
+```
+
+#### 方式 3: 作为 Python 库
+
+```python
+from agents.workflow_complete import create_complete_workflow
+
+# 创建工作流
+workflow = create_complete_workflow(
+    llm_provider="hunyuan",
+    model_name="hunyuan-large",
+    db_path="lifeos_data.db"
+)
+
+# 处理用户输入
+result = workflow.run(
+    user_input="帮我整理今天的任务",
+    user_id="user_123"
+)
+
+print(result["final_output"])
 ```
 
 ---
@@ -227,523 +461,899 @@ python demo_complete.py
 
 ```
 lifeos-ai-assistant/
-├── agents/                          # 智能体核心代码
+├── agents/                          # 🌟 核心智能体模块（LangGraph架构）
 │   ├── __init__.py
-│   ├── state.py                     # LangGraph 状态定义
-│   ├── hunyuan_llm.py              # 腾讯混元 LLM 封装
-│   ├── prompts_complete.py         # 所有 Prompt 模板
-│   ├── tools_complete.py           # 4 大类工具实现
-│   ├── conversation_manager.py     # 对话管理（SQLite）
-│   └── workflow_complete.py        # LangGraph 工作流
+│   ├── state.py                     # LangGraph 状态定义（TypedDict）
+│   ├── workflow_complete.py         # 完整工作流引擎（9个节点）⭐
+│   ├── prompts_complete.py         # 7个专业Prompt模板集 ⭐
+│   ├── tools_complete.py           # 工具集（预留，未使用）
+│   ├── conversation_manager.py     # 对话管理器（SQLite）⭐
+│   └── hunyuan_llm.py              # 腾讯混元LLM适配器 ⭐
 │
-├── static/                          # Web UI 静态资源
-│   └── index.html                  # 单页应用（HTML+CSS+JS）
+├── static/                          # Web UI前端
+│   ├── index.html                  # 单页应用（HTML+CSS+JS）⭐
+│   └── favicon.ico
 │
-├── web_app.py                       # FastAPI 后端服务
-├── demo_complete.py                 # 命令行演示脚本
-├── requirements.txt                 # Python 依赖
+├── modules/                         # ⚠️ 旧版模块（已废弃，保留供参考）
+│   ├── conversation_flow.py
+│   ├── smart_summary.py
+│   ├── next_action.py
+│   ├── memory.py
+│   ├── system_prompts.py
+│   ├── llm_service.py
+│   └── lifeos_real.py
+│
+├── data/                            # 数据目录
+├── logs/                            # 日志目录
+│
+├── web_app.py                       # FastAPI后端（WebSocket）⭐
+├── demo_complete.py                 # 命令行演示脚本 ⭐
+├── start_demo.py                    # 旧版Demo（废弃）
+│
+├── requirements.txt                 # Python依赖清单
+├── .env                            # 环境配置（需创建，不提交）
 ├── .env.example                     # 环境变量模板
-├── lifeos_data.db                  # SQLite 数据库（自动创建）
+├── .gitignore                      # Git忽略规则
+│
+├── lifeos_data.db                  # SQLite数据库（自动创建）
+│
+├── ARCHITECTURE.md                 # 🌟 架构说明文档 ⭐
 ├── HUNYUAN_FIX_REPORT.md          # 腾讯混元集成文档
-└── README.md                        # 项目文档
-```
-
-### 核心模块说明
-
-#### 1. `agents/workflow_complete.py` - 工作流引擎
-```python
-CompleteLifeOSWorkflow              # 主工作流类
-├── _intent_recognition_node        # 意图识别节点
-├── _task_processing_node           # 任务处理节点
-├── _emotion_support_node           # 情绪支持节点
-├── _habit_management_node          # 习惯管理节点
-├── _goal_planning_node             # 目标规划节点
-├── _reflection_guide_node          # 反思引导节点
-├── _casual_response_node           # 闲聊回应节点（新增 LLM 支持）
-└── _output_generation_node         # 输出生成节点
-```
-
-**工作流路由逻辑：**
-```
-用户输入 → 意图识别 → 条件路由 → 专业节点处理 → 输出生成
-                ↓
-        ┌───────┴───────┐
-        ↓               ↓
-    task_management  emotion_support
-    habit_tracking   goal_setting
-    reflection       casual_chat
-```
-
-#### 2. `agents/hunyuan_llm.py` - LLM 适配器
-```python
-HunyuanLLM                          # 腾讯混元封装类
-├── invoke()                        # LangChain 兼容接口
-├── _convert_messages()             # 消息格式转换
-└── chat()                          # 原生对话接口
-
-create_hunyuan_llm()                # 工厂函数
-```
-
-**关键特性：**
-- ✅ 自动消息格式转换（LangChain → 腾讯云格式）
-- ✅ 智能对象检测（支持 SystemMessage/HumanMessage/AIMessage）
-- ✅ 异常处理和重试机制
-
-#### 3. `agents/conversation_manager.py` - 对话管理
-```python
-ConversationManager                 # 对话管理器
-├── create_session()               # 创建会话
-├── add_turn()                     # 添加对话轮次
-├── get_conversation_history()     # 获取历史记录
-└── get_session_stats()            # 获取会话统计
-```
-
-**数据库表结构：**
-- `conversations` - 对话记录（用户输入+助理回复）
-- `sessions` - 会话信息（用户ID、开始时间、活跃时间）
-- `habits` - 习惯数据
-- `goals` - 目标数据
-- `reflections` - 反思记录
-- `habit_checkins` - 习惯打卡
-- `goal_milestones` - 目标里程碑
-
-#### 4. `web_app.py` - Web 服务
-```python
-FastAPI 应用
-├── GET /                          # 主页（返回 index.html）
-├── WebSocket /ws/{user_id}        # WebSocket 实时通信
-├── GET /api/sessions/{user_id}    # 获取用户会话
-├── GET /api/session/{id}/history  # 获取历史记录
-├── GET /api/session/{id}/stats    # 获取会话统计
-└── GET /health                    # 健康检查
-```
-
-**WebSocket 消息格式：**
-```json
-// 客户端 → 服务器
-{
-  "message": "用户输入的文本"
-}
-
-// 服务器 → 客户端
-{
-  "type": "thinking|response|error|connected",
-  "intent": "casual_chat",
-  "confidence": 0.95,
-  "response": "助理回复内容",
-  "processing_steps": ["步骤1", "步骤2"],
-  "timestamp": "2025-11-13T10:30:00"
-}
-```
-
----
-
-## 🏗️ 技术架构
-
-# ===== 腾讯混元配置 =====
-TENCENT_SECRET_ID="your_secret_id"
-TENCENT_SECRET_KEY="your_secret_key"
-HUNYUAN_MODEL="hunyuan-large"
-
-# ===== OpenAI 配置（可选）=====
-# OPENAI_API_KEY="sk-xxxx"
-# OPENAI_MODEL="gpt-3.5-turbo"
-```
-
-### 4. 运行 Demo
-
-```bash
-# 方式 1: 运行 Web 界面（推荐）
-python web_app.py
-# 访问 http://localhost:8000
-
-# 方式 2: 运行完整 Demo
-python demo_complete.py
-
-# 方式 3: 运行旧版 Demo（简化版）
-python start_demo.py
-```
-
-### 5. 查看输出
-
-Demo 会依次展示：
-1. **信息过载场景** - 自动总结与优先级排序
-2. **计划拆解场景** - 大任务拆成小步骤
-3. **个性化指导场景** - 根据习惯调整计划
-
----
-
-## 🏗️ 技术架构
-
-```
-┌─────────────────────────────────────────────┐
-│          LifeOS AI Assistant                │
-├─────────────────────────────────────────────┤
-│                                             │
-│  ┌──────────────┐      ┌──────────────┐   │
-│  │  用户输入     │ ───→ │  意图分类     │   │
-│  └──────────────┘      └──────┬───────┘   │
-│                              │             │
-│              ┌───────────────┼───────┐     │
-│              ↓               ↓       ↓     │
-│     ┌────────────┐  ┌────────────┐  │     │
-│     │ 情绪支持模式 │  │ 行动助理模式 │  │     │
-│     │ (温暖陪伴)  │  │ (任务拆解)  │  │     │
-│     └────────────┘  └─────┬──────┘  │     │
-│                           │         │     │
-│              ┌────────────┼─────────┘     │
-│              ↓            ↓               │
-│     ┌────────────┐  ┌────────────┐       │
-│     │ 智能摘要    │  │ 任务拆解    │       │
-│     │ (信息过滤)  │  │ (行动指导)  │       │
-│     └────────────┘  └────────────┘       │
-│              │            │               │
-│              └────────┬───┘               │
-│                       ↓                   │
-│              ┌────────────────┐           │
-│              │  个性化记忆系统  │           │
-│              │  (SQLite)      │           │
-│              └────────────────┘           │
-│                       │                   │
-│                       ↓                   │
-│              ┌────────────────┐           │
-│              │   LLM 服务层    │           │
-│              │ (腾讯混元/OpenAI)│          │
-│              └────────────────┘           │
-└─────────────────────────────────────────────┘
-```
-
-### 核心模块
-
-| 模块 | 功能 | 文件 |
-|-----|------|------|
-| **意图分类** | 识别用户意图（情绪/任务/决策） | `conversation_flow.py` |
-| **智能摘要** | 信息过滤、优先级排序 | `smart_summary.py` |
-| **任务拆解** | 大任务分解成小步骤 | `next_action.py` |
-| **记忆系统** | 用户偏好、习惯记录 | `memory.py` |
-| **LLM 服务** | 多模型接入（混元/OpenAI） | `llm_service.py` |
-| **主控制器** | 完整流程编排 | `lifeos_real.py` |
-
----
-
-## 🎬 功能演示
-
-### Demo #1: 信息过载场景
-
-```python
-from modules.lifeos_real import LifeOSRealAssistant
-
-assistant = LifeOSRealAssistant(llm_provider="hunyuan")
-
-response = assistant.chat(
-    user_id="user_001",
-    user_input="""我感觉好崩溃，今天事情太多了：
-    1. 明天要交的项目报告还没写完
-    2. 晚上要和客户开会，还没准备材料
-    3. 有三封邮件要回复
-    4. 同事让我帮忙看两个文件
-    5. 还要去超市买菜"""
-)
-
-print(response["display_text"])
-```
-
-**输出:** 自动总结、优先级排序、建议跳过项
-
----
-
-### Demo #2: 任务拆解场景
-
-```python
-response = assistant.chat(
-    user_id="user_002",
-    user_input="我想开始学习 Python 数据分析，但不知道从哪里开始"
-)
-
-print(response["display_text"])
-```
-
-**输出:** 3-5个可执行步骤，每步估时5-30分钟
-
----
-
-### Demo #3: 个性化指导
-
-```python
-# 先记录用户偏好
-assistant.memory_manager.remember(
-    "user_003",
-    "morning_productivity",
-    True,  # 早上效率高
-    MemoryType.PREFERENCE
-)
-
-response = assistant.chat(
-    user_id="user_003",
-    user_input="今天下午要写报告，晚上要回邮件"
-)
-
-print(response["display_text"])
-```
-
-**输出:** 基于用户习惯，智能调整任务安排
-
----
-
-## 🔌 接入大模型
-
-### 方式 1: 腾讯混元（推荐）
-
-```ini
-# .env 文件
-LLM_PROVIDER="hunyuan"
-TENCENT_SECRET_ID="your_secret_id"
-TENCENT_SECRET_KEY="your_secret_key"
-HUNYUAN_MODEL="hunyuan-large"
-```
-
-### 方式 2: OpenAI
-
-```ini
-# .env 文件
-LLM_PROVIDER="openai"
-OPENAI_API_KEY="sk-xxxx"
-OPENAI_MODEL="gpt-3.5-turbo"
-```
-
-### 方式 3: Mock 模式（测试用）
-
-```ini
-# .env 文件
-LLM_PROVIDER="mock"
-```
-
-### 代码中使用
-
-```python
-from modules.llm_service import call_llm
-
-# 自动使用 .env 配置的提供者
-messages = [
-    {"role": "system", "content": "你是 LifeOS 助手"},
-    {"role": "user", "content": "帮我整理任务"}
-]
-
-response = call_llm(messages, temperature=0.7, max_tokens=1500)
-```
-
----
-
-## 📁 项目结构
-
-```
-lifeos-ai-assistant/
-├── agents/                          # LangGraph 智能体（新架构）⭐
-│   ├── __init__.py
-│   ├── state.py                     # LangGraph 状态定义
-│   ├── hunyuan_llm.py              # 腾讯混元 LLM 封装
-│   ├── prompts_complete.py         # 完整 Prompt 模板集
-│   ├── tools_complete.py           # 4 大类工具实现
-│   ├── conversation_manager.py     # 对话管理（SQLite）
-│   └── workflow_complete.py        # LangGraph 完整工作流
-│
-├── modules/                         # 原始模块（旧架构）
-│   ├── conversation_flow.py        # 意图分类与对话流
-│   ├── smart_summary.py            # 智能摘要
-│   ├── next_action.py              # 任务拆解
-│   ├── memory.py                   # 记忆系统
-│   ├── system_prompts.py           # Prompt 模板
-│   ├── llm_service.py              # LLM 服务层
-│   └── lifeos_real.py              # 旧版主控制器
-│
-├── static/                          # Web UI 静态资源
-│   └── index.html                  # 单页应用（HTML+CSS+JS）
-│
-├── web_app.py                       # FastAPI 后端服务（使用 agents/）⭐
-├── demo_complete.py                 # 命令行演示（使用 agents/）⭐
-├── start_demo.py                    # 旧版 Demo（使用 modules/）
-├── requirements.txt                 # Python 依赖
-├── .env                            # 环境配置（需创建）
-├── .env.example                    # 环境变量模板
-├── lifeos_data.db                  # SQLite 数据库（自动创建）
-├── HUNYUAN_FIX_REPORT.md          # 腾讯混元集成文档
+├── API_GUIDE.md                    # API使用指南
+├── LICENSE                         # MIT 许可证
 └── README.md                        # 项目文档（本文件）
 ```
 
-**⚠️ 架构说明：**
-- **`agents/` - 新架构**（推荐使用）：基于 LangGraph，完整的多智能体工作流
-- **`modules/` - 旧架构**：早期版本，功能简化，仅供参考
-- **当前 Web UI 和主要功能使用 `agents/` 目录**
+### 核心文件说明
+
+| 文件 | 说明 | 代码行数 | 状态 |
+|------|------|---------|------|
+| **agents/workflow_complete.py** | LangGraph 完整工作流，9个节点 + 条件路由 | ~1000 行 | ✅ 核心 |
+| **agents/prompts_complete.py** | 7个专业 Prompt 模板 | ~300 行 | ✅ 核心 |
+| **agents/hunyuan_llm.py** | 腾讯混元 LLM 适配器，LangChain 兼容 | ~150 行 | ✅ 核心 |
+| **agents/conversation_manager.py** | 对话管理器，SQLite 持久化，7张表 | ~200 行 | ✅ 核心 |
+| **agents/state.py** | LangGraph 状态定义（TypedDict） | ~30 行 | ✅ 核心 |
+| **web_app.py** | FastAPI 后端 + WebSocket | ~200 行 | ✅ 主入口 |
+| **static/index.html** | Web UI 单页应用 | ~500 行 | ✅ 前端 |
+| **demo_complete.py** | 命令行演示 | ~150 行 | ✅ Demo |
+| **agents/tools_complete.py** | 工具集 | ~100 行 | ⚠️ 预留 |
+| **modules/** | 旧版模块 | ~1000 行 | ❌ 已废弃 |
 
 ---
 
-## � 开发指南
+## 🏗️ 技术架构
 
-### 添加新的意图类型
+详细架构说明请查看 **[ARCHITECTURE.md](ARCHITECTURE.md)**
 
-1. **在 `agents/prompts_complete.py` 添加 Prompt：**
-```python
-new_intent_prompt = ChatPromptTemplate.from_messages([
-    ("system", "你的系统提示..."),
-    ("human", "{user_input}")
-])
+### 核心技术栈
+
+| 类别 | 技术 | 版本 | 说明 |
+|-----|------|------|------|
+| **AI框架** | LangChain | 1.0.2 | LLM应用开发框架 |
+| **工作流引擎** | LangGraph | 0.2.57 | 状态机和条件路由 |
+| **LLM提供者** | 腾讯混元 | hunyuan-large | 主力大模型 |
+| **Web框架** | FastAPI | Latest | 异步API服务 |
+| **实时通信** | WebSocket | - | 双向实时消息 |
+| **数据库** | SQLite | 内置 | 轻量级持久化 |
+| **数据验证** | Pydantic | 2.11.0 | 类型安全 |
+| **环境管理** | python-dotenv | 1.0.1 | 配置管理 |
+
+### 架构示意图
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    LifeOS AI Assistant                          │
+│            完整多智能体工作流 (LangGraph 架构)                      │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                   Web UI (static/index.html)                     │
+│  • 渐变色设计  • WebSocket实时通信  • 对话历史  • 意图可视化       │
+└─────────────────────────────────────────────────────────────────┘
+                              │ WebSocket /ws/{user_id}
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                   FastAPI 后端 (web_app.py)                      │
+│  • WebSocket处理  • RESTful API  • 会话管理  • 健康检查          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│         LangGraph 工作流 (agents/workflow_complete.py)           │
+│                                                                 │
+│  ┌────────────────┐                                            │
+│  │ 意图识别节点    │ → LLM语义理解 + 置信度评分                   │
+│  │ (intent_recog) │                                            │
+│  └────────┬───────┘                                            │
+│           │                                                     │
+│    ┌──────┴──────┬────────┬────────┬────────┬────────┐        │
+│    ↓             ↓        ↓        ↓        ↓        ↓        │
+│  ┌─────┐      ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐       │
+│  │任务  │      │情绪 │ │习惯 │ │目标 │ │反思 │ │闲聊 │       │
+│  │处理  │      │支持 │ │管理 │ │规划 │ │引导 │ │回应 │       │
+│  └──┬──┘      └──┬─┘ └──┬─┘ └──┬─┘ └──┬─┘ └──┬─┘       │
+│     │            │      │      │      │      │           │
+│     │ len(tasks)≥2?                                       │
+│     ↓                                                      │
+│  ┌──────────────┐                                         │
+│  │个性化增强节点 │ ← 根据用户画像优化                        │
+│  │(conditional) │                                         │
+│  └──────┬───────┘                                         │
+│         │                                                  │
+│    所有路径汇聚                                             │
+│         ↓                                                  │
+│  ┌──────────────┐                                         │
+│  │输出生成节点   │ → 整合最终回复                            │
+│  └──────────────┘                                         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ↓                   ↓                   ↓
+┌──────────────────┐ ┌───────────────┐ ┌──────────────────┐
+│ Prompt模板集      │ │ 对话管理器     │ │ 腾讯混元 LLM      │
+│ (7个专业Prompt)   │ │ (SQLite 7表)  │ │ (hunyuan-large)  │
+└──────────────────┘ └───────────────┘ └──────────────────┘
 ```
 
-2. **在 `agents/workflow_complete.py` 添加节点：**
-```python
-def _new_intent_node(self, state: AgentState) -> Dict:
-    """新意图处理节点"""
-    # 你的处理逻辑
-    return {"final_output": "回复内容"}
-```
+### LangGraph 工作流详解
 
-3. **更新路由配置：**
+#### 1. 节点列表
+
+| 节点名称 | 函数 | 功能 | Prompt |
+|---------|------|------|--------|
+| `intent_recognition` | `_intent_recognition_node` | 意图识别 | `complete_intent_recognition_prompt` |
+| `task_processing` | `_task_processing_node` | 任务处理 | `enhanced_task_extraction_prompt` |
+| `personalization` | `_personalization_node` | 个性化增强 | `personalization_prompt` |
+| `emotion_support` | `_emotion_support_node` | 情绪支持 | `emotion_support_prompt` |
+| `habit_management` | `_habit_management_node` | 习惯管理 | `habit_management_prompt` |
+| `goal_planning` | `_goal_planning_node` | 目标规划 | `goal_planning_prompt` |
+| `reflection_guide` | `_reflection_guide_node` | 反思引导 | `reflection_prompt` |
+| `casual_response` | `_casual_response_node` | 闲聊回应 | 动态生成 |
+| `output_generation` | `_output_generation_node` | 输出生成 | - |
+
+#### 2. 条件路由
+
 ```python
+# 意图路由（6种意图）
 workflow.add_conditional_edges(
     "intent_recognition",
-    self._route_by_intent,
+    self._route_by_intent,  # 根据 state["intent"] 路由
     {
-        # ... 其他路由
-        "new_intent": "new_intent_processing"
+        "task_management": "task_processing",
+        "emotion_support": "emotion_support",
+        "habit_tracking": "habit_management",
+        "goal_setting": "goal_planning",
+        "reflection": "reflection_guide",
+        "casual_chat": "casual_response"
+    }
+)
+
+# 个性化路由（条件触发）
+workflow.add_conditional_edges(
+    "task_processing",
+    self._should_personalize,  # len(tasks) >= 2 ?
+    {
+        "personalize": "personalization",  # 执行个性化
+        "skip": "output_generation"        # 跳过
     }
 )
 ```
 
-### 添加新工具
-
-在 `agents/tools_complete.py` 中：
+#### 3. 状态流转
 
 ```python
-class NewTool(BaseTool):
-    name = "new_tool"
-    description = "工具描述"
-    
-    def _run(self, query: str) -> str:
-        # 工具逻辑
-        return result
-```
-
-### 自定义 LLM
-
-在 `agents/hunyuan_llm.py` 中实现 `invoke()` 方法兼容 LangChain：
-
-```python
-class CustomLLM:
-    def invoke(self, messages):
-        # 调用你的 LLM API
-        response = your_llm_api(messages)
-        return Response(content=response)
-```
-
-### 自定义 Prompt
-
-所有 Prompt 模板在 `agents/prompts_complete.py`：
-
-```python
-from agents.prompts_complete import complete_intent_recognition_prompt
-
-# 修改或扩展 Prompt
-CUSTOM_PROMPT = complete_intent_recognition_prompt + """
-你的额外指令...
-"""
-```
-
-```python
-from modules.system_prompts import MASTER_SYSTEM_PROMPT
-
-# 修改或扩展 Prompt
-CUSTOM_PROMPT = MASTER_SYSTEM_PROMPT + """
-你的额外指令...
-"""
-```
-
-### 测试
-
-```bash
-# 运行集成测试
-python -m modules.integration_testing
-
-# 测试单个模块
-python -m modules.smart_summary
-python -m modules.next_action
+# 初始状态（AgentState TypedDict）
+{
+    "user_input": str,
+    "user_id": str,
+    "session_id": str,
+    "conversation_history": List[Dict],
+    "intent": str,
+    "confidence": float,
+    "context_continuation": bool,
+    "analyzed_tasks": List[Dict],
+    "priority_analysis": Dict,
+    "processing_steps": List[str],
+    "final_output": str,
+    "timestamp": str
+}
 ```
 
 ---
 
-## 📊 性能指标
+## 🎬 使用示例
 
-| 指标 | 目标 | 当前 |
-|-----|------|------|
-| 意图分类准确率 | > 90% | 85-90% |
-| 响应时间 | < 3s | 1-2s |
-| 任务拆解质量 | > 85% | 80-85% |
-| 用户满意度 | > 4.0/5.0 | 待测试 |
+### 示例 1: 任务管理（触发个性化）
+
+```python
+from agents.workflow_complete import create_complete_workflow
+
+workflow = create_complete_workflow(
+    llm_provider="hunyuan",
+    model_name="hunyuan-large"
+)
+
+result = workflow.run(
+    user_input="""我今天要做：
+    1. 完成项目报告
+    2. 回复3封邮件
+    3. 准备明天的会议材料
+    4. 去超市买菜
+    5. 健身1小时""",
+    user_id="user_001"
+)
+
+print(result["final_output"])
+```
+
+**输出示例**：
+```
+🔍 [意图识别] 调用 LLM 分析...
+   ✓ 意图: task_management (置信度: 0.95)
+
+📋 [任务处理] 提取并分析任务...
+   ✓ 提取到 5 个任务
+
+🎨 [个性化] 根据用户画像优化建议...
+   ✓ 个性化完成 (激励方式: 目标驱动型)
+
+好的！我帮你整理了 5 个任务：
+
+1. 🔴 完成项目报告 (高优先级) | 预计 90分钟
+2. 🔴 准备明天的会议材料 (高优先级) | 预计 60分钟
+3. 🟡 回复3封邮件 (中优先级) | 预计 30分钟
+4. 🟢 去超市买菜 | 预计 45分钟
+5. 🟢 健身1小时
+
+🔴 有 2 个高优先级任务需要优先处理
+💡 建议先从「完成项目报告」开始
+
+💡 执行建议：
+• 先完成报告和会议材料（工作相关）
+• 邮件可以在午休时快速处理
+• 买菜和健身可以晚上进行
+
+🎯 根据你的习惯定制建议：
+• 你是任务导向型，建议使用番茄工作法（25分钟专注+5分钟休息）
+• 根据历史数据，你在上午9-11点效率最高，建议这个时间段完成报告
+• 预留20%的缓冲时间应对突发情况
+
+⏰ 推荐时间安排：
+9:00-11:00   完成项目报告（高专注）
+11:00-12:00  准备会议材料
+13:00-13:30  回复邮件
+18:00-18:45  去超市买菜
+19:00-20:00  健身
+```
+
+---
+
+### 示例 2: 目标规划（多轮延续）
+
+**第一轮：设定目标**
+
+```python
+result = workflow.run(
+    user_input="我想在3个月内学会 Python 数据分析",
+    user_id="user_002"
+)
+```
+
+**输出**：
+```
+🎯 **目标**: 3个月学会Python数据分析
+💡 **动机**: 提升数据处理能力，为职业发展做准备
+⏰ **时间规划**: 12周，每周投入10小时
+
+📍 **学习路径（里程碑）**:
+
+**阶段1: Python基础语法** (第1-2周)
+   掌握变量、循环、函数、类等基本概念
+   行动清单:
+   ✓ 完成Python官方教程前5章
+   ✓ 做30道基础练习题
+   ✓ 写3个小项目（计算器、猜数字游戏等）
+
+**阶段2: NumPy和Pandas入门** (第3-5周)
+   能进行数据清洗、筛选、聚合等基本操作
+   行动清单:
+   ✓ 学习NumPy数组操作
+   ✓ 掌握Pandas的DataFrame
+   ✓ 完成5个数据清洗案例
+
+**阶段3: 数据可视化** (第6-7周)
+   能用Matplotlib和Seaborn制作各类图表
+   行动清单:
+   ✓ 学习折线图、柱状图、散点图等
+   ✓ 掌握Seaborn高级可视化
+   ✓ 完成3个可视化项目
+
+**阶段4: 实战项目** (第8-12周)
+   完成2-3个完整的数据分析项目
+   行动清单:
+   ✓ 分析电商销售数据
+   ✓ 分析金融股票数据
+   ✓ 参加Kaggle竞赛
+
+🚀 **立即开始（第一步）**:
+   📝 注册Coursera账号，开始"Python for Everybody"课程
+   ⏱️ 预计耗时: 30分钟
+   ✨ 预期成果: 完成环境搭建，写出第一个Hello World
+
+📚 **推荐资源**:
+   • Python官方教程 (docs.python.org/zh-cn/3/tutorial/)
+   • Coursera: Python for Data Science
+   • Kaggle Learn: Python & Pandas
+
+💡 **实用建议**:
+   • 每天学习1-2小时，保持连续性
+   • 加入学习社群（如Python中文社区）
+   • 边学边做，完成至少10个小项目
+```
+
+**第二轮：延续提问**
+
+```python
+# 保持同一个 session_id
+result = workflow.run(
+    user_input="第二步应该怎么做？",
+    user_id="user_002",
+    session_id=result["session_id"]  # 使用相同会话
+)
+```
+
+**输出**：
+```
+🔍 [意图识别] 调用 LLM 分析...
+   ✓ 意图: goal_setting (置信度: 0.92)
+   🔗 检测到上下文延续
+
+🎯 [目标规划] 拆解目标...
+   ✓ 延续目标: 第2步
+
+🚀 **第2步**:
+
+📝 **行动**: 学习NumPy和Pandas基础
+
+💡 **详细说明**:
+完成第一步Python基础后，开始数据处理库的学习。NumPy是科学计算的基础，Pandas是数据分析的核心工具。
+
+具体行动：
+1. 学习NumPy数组创建和索引（2天）
+2. 掌握NumPy数学运算和统计函数（3天）
+3. 学习Pandas的Series和DataFrame（3天）
+4. 练习数据读取、清洗、筛选（5天）
+5. 完成5个实战案例（1周）
+
+⏱️ **预计耗时**: 3周（每天1-2小时）
+
+✨ **预期成果**:
+• 能熟练使用NumPy进行数组操作
+• 能用Pandas读取CSV/Excel文件
+• 能进行数据清洗和缺失值处理
+• 能进行分组聚合和数据透视
+• 完成5个真实数据集的清洗案例
+
+📚 **推荐资源**:
+• NumPy官方文档：numpy.org
+• Pandas官方教程：pandas.pydata.org/docs/getting_started/
+• Kaggle Learn: Pandas课程
+• YouTube: Corey Schafer的Pandas系列
+
+💡 **学习技巧**:
+• 先理解概念，再动手实践
+• 使用Jupyter Notebook边学边记录
+• 找真实数据集练习（如Kaggle的Titanic数据集）
+• 遇到问题先查官方文档，再搜索Stack Overflow
+```
+
+---
+
+### 示例 3: 情绪支持
+
+```python
+result = workflow.run(
+    user_input="最近压力好大，项目一直加班，快撑不住了",
+    user_id="user_003"
+)
+```
+
+**输出**：
+```
+💚 [情绪支持] 生成温暖回应...
+   ✓ 回应语气: 温暖
+
+💚 我能理解你的感受
+
+工作压力大是很正常的，尤其是在项目紧张期。持续加班确实会让人身心俱疲，能够说出来已经很勇敢了。你愿意说说具体是什么让你感到压力最大吗？
+
+💡 一些想法：
+• 压力往往来自"失控感"，试着把大任务拆解成小步骤，完成一个打勾一个，会有成就感
+• 如果可能，和领导或同事沟通一下，看能否调整工作安排或寻求支持
+
+🌟 如果你愿意，可以试试：
+• 🧘 深呼吸 5 分钟：即使短暂的放松也能缓解压力
+• 🚶 出去走走：换个环境，大脑会得到休息
+
+记住，照顾好自己才能更好地完成工作。你已经很努力了，要对自己温柔一点。❤️
+```
+
+---
+
+### 示例 4: 习惯建立
+
+```python
+result = workflow.run(
+    user_input="我想养成每天早起跑步的习惯",
+    user_id="user_004"
+)
+```
+
+**输出**：
+```
+🎯 [习惯管理] 处理习惯相关请求...
+   ✓ 习惯计划: 每天早起跑步
+
+好的，帮你设计习惯计划：
+
+📌 **习惯名称**: 每天早起跑步
+⏰ **频率**: 每周3次（建议从低频开始，逐步增加）
+🎯 **触发条件**: 闹钟响起后立即穿上运动服（不给自己思考的时间）
+🎁 **小奖励**: 跑完后喝一杯喜欢的咖啡，或者周末奖励自己一顿美食
+🌱 **从小开始**: 第1-2周只跑15分钟，第3-4周增加到20分钟，不要一开始就设定太高目标
+📊 **追踪方式**: 在日历上打勾，连续坚持7天给自己一个小庆祝
+
+💪 记住：习惯养成需要21天，前两周是最难的。即使偶尔中断一次也没关系，重要的是继续坚持。你能做到的！
+```
+
+---
+
+## 📚 API 文档
+
+### REST API
+
+#### 1. 健康检查
+
+```bash
+GET /health
+
+响应:
+{
+  "status": "healthy",
+  "timestamp": "2025-11-14T10:30:00"
+}
+```
+
+#### 2. 获取用户会话列表
+
+```bash
+GET /api/sessions/{user_id}
+
+响应:
+[
+  {
+    "session_id": "session_123",
+    "user_id": "user_001",
+    "start_time": "2025-11-14T09:00:00",
+    "last_active": "2025-11-14T10:30:00",
+    "total_turns": 15
+  }
+]
+```
+
+#### 3. 获取会话历史
+
+```bash
+GET /api/session/{session_id}/history
+
+响应:
+[
+  {
+    "user_input": "帮我整理任务",
+    "assistant_response": "好的，让我帮你整理...",
+    "intent": "task_management",
+    "confidence": 0.95,
+    "timestamp": "2025-11-14T10:25:00",
+    "extracted_data": {
+      "tasks": [...],
+      "priority_analysis": {...}
+    }
+  }
+]
+```
+
+#### 4. 获取会话统计
+
+```bash
+GET /api/session/{session_id}/stats
+
+响应:
+{
+  "total_turns": 15,
+  "intent_distribution": {
+    "task_management": 8,
+    "casual_chat": 4,
+    "goal_setting": 2,
+    "emotion_support": 1
+  },
+  "avg_confidence": 0.87,
+  "start_time": "2025-11-14T09:00:00",
+  "duration_minutes": 90
+}
+```
+
+### WebSocket API
+
+#### 连接
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws/user_123');
+
+ws.onopen = () => {
+  console.log('✅ WebSocket连接成功');
+};
+```
+
+#### 发送消息
+
+```javascript
+ws.send(JSON.stringify({
+  message: "帮我规划一下今天的学习计划"
+}));
+```
+
+#### 接收响应
+
+```javascript
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  
+  if (data.type === 'connected') {
+    console.log('✅ 已连接，会话ID:', data.session_id);
+  }
+  
+  if (data.type === 'thinking') {
+    console.log('🤔 正在思考...');
+  }
+  
+  if (data.type === 'response') {
+    console.log('💬 助理:', data.response);
+    console.log('🎯 意图:', data.intent);
+    console.log('📊 置信度:', data.confidence);
+    console.log('📋 处理步骤:', data.processing_steps);
+  }
+  
+  if (data.type === 'error') {
+    console.error('❌ 错误:', data.message);
+  }
+};
+```
+
+#### 消息格式
+
+**客户端 → 服务器**：
+```json
+{
+  "message": "用户输入的文本"
+}
+```
+
+**服务器 → 客户端**：
+```json
+{
+  "type": "response",
+  "intent": "task_management",
+  "confidence": 0.95,
+  "response": "助理回复内容",
+  "processing_steps": [
+    "🤖 意图识别: task_management - 用户想要整理任务",
+    "📝 任务提取: 5个",
+    "🎨 个性化增强 (目标驱动型)"
+  ],
+  "timestamp": "2025-11-14T10:30:00"
+}
+```
+
+### Python SDK
+
+#### 基础用法
+
+```python
+from agents.workflow_complete import create_complete_workflow
+
+# 创建工作流
+workflow = create_complete_workflow(
+    llm_provider="hunyuan",
+    model_name="hunyuan-large",
+    db_path="lifeos_data.db"
+)
+
+# 处理单次对话
+result = workflow.run(
+    user_input="帮我整理今天的任务",
+    user_id="user_123"
+)
+
+print(result["intent"])          # task_management
+print(result["confidence"])      # 0.95
+print(result["final_output"])    # 助理回复
+print(result["processing_steps"]) # 处理步骤列表
+```
+
+#### 多轮对话
+
+```python
+# 第一轮
+result1 = workflow.run(
+    user_input="我想学Python",
+    user_id="user_123"
+)
+session_id = result1["session_id"]
+
+# 第二轮（延续上下文）
+result2 = workflow.run(
+    user_input="第一步应该怎么做？",
+    user_id="user_123",
+    session_id=session_id  # 使用相同会话ID
+)
+
+# LangGraph 会自动识别这是延续性提问
+print(result2["context_continuation"])  # True
+```
+
+#### 获取对话历史
+
+```python
+from agents.conversation_manager import ConversationManager
+
+manager = ConversationManager(db_path="lifeos_data.db")
+
+# 获取用户的所有会话
+sessions = manager.get_user_sessions("user_123")
+
+# 获取特定会话的历史
+history = manager.get_conversation_history(session_id="session_456", last_n_turns=10)
+
+for turn in history:
+    print(f"用户: {turn['user_message']}")
+    print(f"助理: {turn['assistant_message']}")
+    print(f"意图: {turn['intent']} (置信度: {turn['intent_confidence']:.2f})")
+    print("---")
+```
+
+---
+
+## ❓ 常见问题
+
+### Q1: 个性化节点为什么没有执行？
+
+**可能原因**：
+1. 任务数量 < 2（判断条件：`len(tasks) >= 2`）
+2. 意图不是 `task_management`
+3. LLM 不可用（Mock 模式）
+
+**调试方法**：
+```python
+# 查看处理步骤
+print(result["processing_steps"])
+
+# 如果没有 "🎨 个性化增强"，说明被跳过了
+```
+
+**解决方案**：
+- 确保输入包含 ≥2 个任务
+- 检查 LLM 是否正常初始化
+
+### Q2: 如何切换到 OpenAI？
+
+修改 `.env` 文件：
+```bash
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-xxxx
+MODEL_NAME=gpt-3.5-turbo
+```
+
+或在代码中：
+```python
+workflow = create_complete_workflow(
+    llm_provider="openai",
+    api_key="sk-xxxx",
+    model_name="gpt-3.5-turbo"
+)
+```
+
+### Q3: 数据库在哪里？
+
+默认在项目根目录：`lifeos_data.db`
+
+可通过环境变量修改：
+```bash
+DB_PATH=./data/my_database.db
+```
+
+### Q4: WebSocket 连接失败？
+
+1. 检查防火墙设置
+2. 确认端口 8000 未被占用
+3. 查看日志：
+   ```bash
+   python web_app.py
+   # 查看终端输出
+   ```
+
+### Q5: 腾讯混元 API 调用失败？
+
+**常见原因**：
+1. 密钥错误
+2. 账户余额不足
+3. 区域限制
+
+**解决方案**：
+```bash
+# 1. 检查密钥
+echo $TENCENT_SECRET_ID
+echo $TENCENT_SECRET_KEY
+
+# 2. 测试连接
+python -c "from agents.hunyuan_llm import create_hunyuan_llm; llm = create_hunyuan_llm(); print(llm.invoke('你好'))"
+
+# 3. 查看详细错误
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+### Q6: 如何清空对话历史？
+
+```python
+from agents.conversation_manager import ConversationManager
+
+manager = ConversationManager()
+manager.clear_user_data("user_id")
+```
+
+或直接删除数据库：
+```bash
+rm lifeos_data.db
+```
+
+### Q7: 如何自定义 Prompt？
+
+编辑 `agents/prompts_complete.py`：
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+# 修改现有 Prompt
+enhanced_task_extraction_prompt = ChatPromptTemplate.from_messages([
+    ("system", """你是任务管理专家...
+    [在这里添加你的自定义指令]
+    """),
+    ("human", "{user_input}")
+])
+```
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ 已完成
-- ✅ 真实 LLM 意图识别（腾讯混元 hunyuan-large）
-- ✅ LangGraph 多智能体工作流（8个节点 + 条件路由）
-- ✅ 任务管理（优先级排序 🔴🟡🟢）
-- ✅ 情绪支持（LLM 驱动的温暖回应）
+### ✅ 已完成 (v1.0)
+- ✅ 腾讯混元 LLM 集成（hunyuan-large）
+- ✅ LangGraph 9节点工作流 + 条件路由
+- ✅ 6种意图识别（task/emotion/habit/goal/reflection/casual）
+- ✅ 任务管理（优先级分析 + 三级排序）
+- ✅ 个性化增强（用户画像 + 条件触发）
+- ✅ 情绪支持（共情回应 + 实用建议）
 - ✅ 目标规划（完整拆解 + 多轮延续）
-- ✅ 习惯管理（建议和指导）
-- ✅ 闲聊对话（上下文感知）
-- ✅ 多轮对话记忆（SQLite 持久化）
-- ✅ Web UI（WebSocket 实时通信 + 现代渐变设计）
+- ✅ 习惯管理（计划设计）
+- ✅ 反思引导（4D模型）
+- ✅ 多轮对话记忆（SQLite 7表）
+- ✅ Web UI（WebSocket 实时通信 + 渐变设计）
+- ✅ RESTful API（会话管理 + 历史查询）
 
-### 🌟 未来展望
-- 📱 移动端适配
-- 📊 数据可视化面板（习惯追踪图表、目标进度）
-- 🔔 智能提醒系统（日历集成）
-- 🎙️ 语音交互支持
+### 🚧 进行中 (v1.1)
+- 🚧 习惯打卡功能（前端 UI + 后端 API）
+- 🚧 目标进度追踪（可视化图表）
+- 🚧 数据导出功能（JSON/CSV）
+- 🚧 单元测试（pytest + 覆盖率 >80%）
+
+### 🌟 计划中 (v2.0)
+- 📱 移动端适配（响应式优化）
+- 📊 数据可视化面板
+  - 习惯追踪热力图
+  - 目标完成进度条
+  - 情绪趋势分析
+- 🔔 智能提醒系统
+  - 任务截止提醒
+  - 习惯打卡提醒
+  - 日历集成（Google Calendar）
+- 🎙️ 语音交互
+  - 语音输入（Web Speech API）
+  - 语音合成（TTS）
+- 🌐 多语言支持（i18n）
 - 🐳 Docker 容器化部署
-- 🧪 单元测试覆盖（pytest）
+
+### 💡 远期规划 (v3.0)
+- 🤖 多模型支持（Claude、文心一言、Gemini）
+- 🔗 第三方集成
+  - Notion 数据同步
+  - Trello 任务导入
+  - Slack 通知推送
+- 🧠 高级 AI 能力
+  - RAG（检索增强生成）
+  - 记忆网络（长期用户画像）
+  - 主动推荐系统
+- 📈 数据分析
+  - 生产力报告
+  - 习惯养成分析
+  - 目标达成预测
+- 👥 协作功能
+  - 团队任务管理
+  - 共享习惯打卡
+  - 目标协同规划
 
 ---
 
 ## 🤝 贡献指南
 
-欢迎提交 PR！请遵循以下步骤：
+欢迎提交 PR 和 Issue！
+
+### 如何贡献
 
 1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交改动 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
+2. 创建特性分支：`git checkout -b feature/amazing-feature`
+3. 提交改动：`git commit -m 'Add some amazing feature'`
+4. 推送到分支：`git push origin feature/amazing-feature`
 5. 提交 Pull Request
 
-**代码规范：**
-- 遵循 PEP 8 Python 代码规范
-- 添加必要的注释和文档字符串
-- 保持代码简洁易读
+### 代码规范
+
+- 遵循 PEP 8
+- 使用类型注解（Type Hints）
+- 添加文档字符串（Docstrings）
+- 提交前运行：
+  ```bash
+  black .
+  flake8 agents/ --max-line-length=100
+  pytest tests/
+  ```
+
+### 提交规范
+
+```
+feat: 添加新功能
+fix: 修复 bug
+docs: 文档更新
+style: 代码格式
+refactor: 代码重构
+test: 添加测试
+chore: 构建/工具链
+```
 
 ---
 
 ## 📄 License
 
-本项目采用 MIT License - 详见 [LICENSE](LICENSE) 文件
+MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
 ## 📧 联系方式
 
-- **项目地址**: [GitHub](https://github.com/yourusername/lifeos-ai-assistant)
+- **项目主页**: https://github.com/yourusername/lifeos-ai-assistant
 - **问题反馈**: [Issues](https://github.com/yourusername/lifeos-ai-assistant/issues)
-- **Pull Requests**: [PR](https://github.com/yourusername/lifeos-ai-assistant/pulls)
+- **讨论交流**: [Discussions](https://github.com/yourusername/lifeos-ai-assistant/discussions)
 
 ---
 
 ## 🙏 致谢
 
-感谢以下开源项目和服务：
-
-- [LangChain](https://python.langchain.com/) - LLM 应用开发框架
-- [LangGraph](https://github.com/langchain-ai/langgraph) - 工作流编排引擎
-- [腾讯混元](https://cloud.tencent.com/product/hunyuan) - 大模型 API 服务
-- [FastAPI](https://fastapi.tiangolo.com/) - 现代 Web 框架
-- [SQLite](https://www.sqlite.org/) - 轻量级数据库
+感谢以下开源项目：
+- [LangChain](https://python.langchain.com/)
+- [LangGraph](https://github.com/langchain-ai/langgraph)
+- [腾讯混元](https://cloud.tencent.com/product/hunyuan)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [SQLite](https://www.sqlite.org/)
 
 ---
 
